@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paseo por el Casino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Lilita+One&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <!-- Pantalla de carga -->
+  <div id="loader">
+    <div class="chip"></div>
+    <p>Armando el casino…</p>
+  </div>
+
+  <!-- Portada -->
+  <section id="cover" class="hidden">
+    <div class="cover-kicker" id="cover-kicker"></div>
+    <h1 class="cover-title" id="cover-title"></h1>
+    <p class="cover-sub" id="cover-sub"></p>
+  </section>
+
+  <!-- Panel de diapositiva -->
+  <article id="panel" class="side-right">
+    <span class="tape tape-l"></span><span class="tape tape-r"></span>
+    <header>
+      <span class="panel-kicker" id="panel-kicker"></span>
+      <h2 id="panel-title"></h2>
+    </header>
+    <ul id="panel-bullets"></ul>
+    <p class="panel-tip" id="panel-tip"></p>
+  </article>
+
+  <!-- Globo de diálogo (moza) -->
+  <div id="bubble" class="hidden"></div>
+
+  <!-- Tooltip de interacción -->
+  <div id="hover-tip" class="hidden"></div>
+
+  <!-- Barra superior -->
+  <div id="topbar">
+    <div class="brand" id="brand"></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btn-remote" title="Control remoto desde el celular (R)" aria-label="Control remoto desde el celular">
+        <svg viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 3v13h10V5H7zm5 14.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+        <span class="remote-dot" id="remote-dot"></span>
+      </button>
+      <button class="icon-btn" id="btn-map" title="Mapa (M)" aria-label="Mostrar u ocultar mapa">
+        <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2 6 2v11.6l-6-2V6.2z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-full" title="Pantalla completa (F)" aria-label="Pantalla completa">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5v2H6v3H4zm10-5h6v5h-2V6h-4V4zM4 15h2v3h3v2H4v-5zm14 3v-3h2v5h-6v-2h4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Minimapa (basado en el croquis) -->
+  <div id="minimap">
+    <canvas id="minimap-canvas"></canvas>
+  </div>
+
+  <!-- Navegación -->
+  <nav id="nav">
+    <button class="nav-btn" id="prev" aria-label="Diapositiva anterior">
+      <svg viewBox="0 0 24 24"><path d="M15.5 4 7 12l8.5 8 2-2-6.4-6 6.4-6z"/></svg>
+    </button>
+    <div class="lcd">
+      <span id="lcd-text">00/05</span>
+      <div class="dots" id="dots"></div>
+    </div>
+    <button class="nav-btn" id="next" aria-label="Diapositiva siguiente">
+      <svg viewBox="0 0 24 24"><path d="M8.5 4 17 12l-8.5 8-2-2 6.4-6-6.4-6z"/></svg>
+    </button>
+  </nav>
+
+  <!-- Control remoto: código QR para el celular -->
+  <div id="remote-modal" class="hidden" role="dialog" aria-label="Control remoto">
+    <div class="remote-card">
+      <button class="remote-close" id="remote-close" aria-label="Cerrar">×</button>
+      <h3>Control remoto</h3>
+      <p class="remote-sub">Escaneá el código con el celular</p>
+      <div class="remote-qr" id="remote-qr"></div>
+      <div class="remote-code">Código: <b id="remote-code">-----</b></div>
+      <p class="remote-status" id="remote-status">Conectando…</p>
+      <p class="remote-warn hidden" id="remote-warn">Estás en tu compu (localhost): el QR va a funcionar cuando la presentación esté publicada en GitHub Pages.</p>
+    </div>
+  </div>
+
+  <div id="hint">← → para moverte · click en los objetos para interactuar</div>
+
+  <!-- Conexión con el celular (PeerJS) y generador de QR -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

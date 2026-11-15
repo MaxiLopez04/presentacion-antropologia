@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1b1f3b" />
+  <title>Control remoto · Casino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lilita+One&family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1b1f3b; --paper: #fff4d6; --red: #e8342f; --yellow: #ffd23a;
+      --lcd-bg: #0e2a14; --lcd: #7dff6a;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #3a4fb8, #1b1f3b 70%) fixed;
+      color: var(--ink); font-family: "Fredoka", system-ui, sans-serif;
+      padding: 14px 16px 28px; user-select: none; touch-action: manipulation;
+    }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .brand {
+      font-family: "Lilita One", sans-serif; font-size: 20px; color: #fff;
+      background: var(--red); border: 4px solid var(--ink); border-radius: 12px;
+      box-shadow: 0 4px 0 var(--ink); padding: 3px 12px 5px; transform: rotate(-2deg);
+    }
+    .status { font-weight: 700; font-size: 14px; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .status i { width: 12px; height: 12px; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); }
+    .status.ok i { background: var(--lcd); box-shadow: 0 0 8px var(--lcd); }
+    .status.err i { background: var(--red); }
+
+    .now {
+      margin-top: 16px; background: var(--paper); border: 5px solid var(--ink); border-radius: 18px;
+      box-shadow: 0 7px 0 var(--ink); padding: 12px 14px;
+    }
+    .lcd {
+      display: inline-block; font-family: "VT323", monospace; font-size: 30px; line-height: 1;
+      color: var(--lcd); background: var(--lcd-bg); border: 3px solid var(--ink); border-radius: 8px; padding: 2px 10px 0;
+    }
+    .now h1 {
+      margin: 8px 0 0; font-family: "Lilita One", sans-serif; font-weight: 400; font-size: 28px; line-height: 1.05;
+    }
+
+    .arrows { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; margin-top: 18px; }
+    .big {
+      height: 120px; border-radius: 22px; border: 5px solid var(--ink);
+      box-shadow: 0 8px 0 var(--ink); display: grid; place-content: center;
+      font: 400 22px "Lilita One", sans-serif; cursor: pointer;
+    }
+    .big svg { width: 54px; height: 54px; margin: 0 auto 2px; display: block; }
+    .big:active, .big.pressed { transform: translateY(6px); box-shadow: 0 2px 0 var(--ink); }
+    #prev { background: var(--yellow); color: var(--ink); }
+    #prev svg { fill: var(--ink); }
+    #next { background: var(--red); color: #fff; }
+    #next svg { fill: #fff; }
+    button:disabled { opacity: .45; }
+
+    h2 { color: #fff; font-family: "Lilita One", sans-serif; font-weight: 400; font-size: 20px; margin: 22px 0 8px; }
+    .actions, .slides { display: grid; gap: 10px; }
+    .actions { grid-template-columns: 1fr; }
+    .slides { grid-template-columns: 1fr 1fr; }
+    .chip {
+      text-align: left; padding: 12px 12px; border-radius: 14px; border: 4px solid var(--ink);
+      box-shadow: 0 5px 0 var(--ink); background: #fff; font: 600 16px "Fredoka", sans-serif; cursor: pointer;
+    }
+    .chip:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+    .chip small { display: block; font-family: "VT323", monospace; font-size: 18px; color: #6a6f8a; }
+    .chip.on { background: var(--yellow); }
+    .chip.action { background: #8fe0ff; font-size: 18px; text-align: center; }
+    .empty { color: #c9cbe6; font-size: 14px; }
+
+    .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .join {
+      margin-top: 30px; background: var(--paper); border: 5px solid var(--ink); border-radius: 18px;
+      box-shadow: 0 7px 0 var(--ink); padding: 16px; text-align: center;
+    }
+    .join input {
+      width: 100%; margin: 10px 0; padding: 10px; text-align: center; text-transform: uppercase;
+      font: 32px "VT323", monospace; letter-spacing: 6px; border: 4px solid var(--ink); border-radius: 12px;
+    }
+    .join button { width: 100%; height: 56px; }
+    .hidden { display: none !important; }
+  </style>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">CASINO · Control</div>
+    <div class="status" id="status"><i></i><span id="status-text">Conectando…</span></div>
+  </div>
+
+  <!-- Si se abre sin código: pedirlo -->
+  <section class="join hidden" id="join">
+    <b>Ingresá el código que aparece en la presentación</b>
+    <input id="code-input" maxlength="5" autocomplete="off" inputmode="text" placeholder="ABCDE" />
+    <button class="big" id="join-btn" style="background: var(--yellow)">Conectar</button>
+  </section>
+
+  <main id="main" class="hidden">
+    <section class="now">
+      <span class="lcd" id="lcd">00/06</span>
+      <h1 id="title">—</h1>
+    </section>
+
+    <div class="arrows">
+      <button class="big" id="prev" aria-label="Anterior">
+        <span><svg viewBox="0 0 24 24"><path d="M15.5 4 7 12l8.5 8 2-2-6.4-6 6.4-6z"/></svg>Atrás</span>
+      </button>
+      <button class="big" id="next" aria-label="Siguiente">
+        <span><svg viewBox="0 0 24 24"><path d="M8.5 4 17 12l-8.5 8-2-2 6.4-6-6.4-6z"/></svg>Siguiente</span>
+      </button>
+    </div>
+
+    <h2>Interacciones de esta parada</h2>
+    <div class="actions" id="actions"></div>
+
+    <h2>Ir a una parada</h2>
+    <div class="slides" id="slides"></div>
+
+    <h2>Pantalla</h2>
+    <div class="tools">
+      <button class="chip" data-cmd="toggleMap">🗺️ Mapa</button>
+      <button class="chip" data-cmd="toggleUI">👁️ Interfaz</button>
+    </div>
+  </main>
+
+  <script src="js/remote.js"></script>
+</body>
+</html>
