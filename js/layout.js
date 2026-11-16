@@ -32,6 +32,9 @@ export const SLOTS = [
   [228, 295, 270, 2], [228, 325, 270, 3], [228, 355, 270, 4], [228, 385, 270, 0],
   // contra la pared de debajo de la escalera mecánica, mirando hacia la ruleta
   [710, 176, 90, 1], [710, 202, 90, 2],
+  // fila contra la pared de debajo de la escalera mecánica (donde estaba el cartel del Pozo)
+  [467, 223, 0, 0], [495, 223, 0, 1], [523, 223, 0, 2], [551, 223, 0, 3], [579, 223, 0, 4],
+  [607, 223, 0, 0], [635, 223, 0, 1], [663, 223, 0, 2], [691, 223, 0, 3],
 ];
 
 // Banco del Pozo MEGA: dos filas espalda con espalda
@@ -72,7 +75,6 @@ export const MAP_RECTS = {
   escalatorTop: [357, 128, 702, 170],
   escalatorBottom: [357, 175, 702, 217],
   vending: [368, 220, 385, 245],
-  pozoSign: [470, 245, 630, 267],
   stairs: [388, 450, 692, 520],
   atm: [858, 477, 906, 520],
   elevator: [1047, 448, 1135, 520],

@@ -422,25 +422,7 @@ export function makePozo() {
   let chase = 0;
   const fmt = (v) => '$ ' + v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const boardTex = canvasTex(1000, 200, (ctx, w, h) => {
-    const grd = ctx.createLinearGradient(0, 0, 0, h);
-    grd.addColorStop(0, '#4b1d9a'); grd.addColorStop(1, '#2a0d63');
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
-    // luces de marquesina
-    const n = 40;
-    for (let i = 0; i < n; i++) {
-      const on = (i + chase) % 3 === 0;
-      const x = 14 + (i * (w - 28)) / (n - 1);
-      for (const y of [12, h - 12]) {
-        ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
-        ctx.fillStyle = on ? '#fff6b0' : '#a0781e'; ctx.fill();
-      }
-    }
-    txt(ctx, 'POZO MEGA', w / 2, 72, { size: 84, fill: C.yellow, stroke: C.red, lw: 14 });
-    rr(ctx, 210, 112, 580, 66, 12); ctx.fillStyle = '#0e2a14'; ctx.fill();
-    ctx.lineWidth = 5; ctx.strokeStyle = C.gold; ctx.stroke();
-    txt(ctx, fmt(amount), w / 2, 148, { font: 'VT323', size: 64, fill: '#7dff6a', lw: 0 });
-  });
+
   const drumTex = canvasTex(1280, 128, (ctx, w, h) => {
     ctx.fillStyle = '#2a0d63'; ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 2; i++) {
@@ -450,29 +432,6 @@ export function makePozo() {
     }
     ctx.fillStyle = C.gold; ctx.fillRect(0, 0, w, 8); ctx.fillRect(0, h - 8, w, 8);
   });
-
-  // cartel sobre patas
-  cyl(g, 0.1, 0.12, 2.5, toon(C.gold), -3.4, 1.25, 0, 16);
-  cyl(g, 0.1, 0.12, 2.5, toon(C.gold), 3.4, 1.25, 0, 16);
-  rbox(g, 8.3, 1.75, 0.36, 0.16, toon('#3a1580'), 0, 3.35, 0, 3);
-  rbox(g, 8.5, 0.14, 0.42, 0.06, toon(C.gold), 0, 2.45, 0);
-  rbox(g, 8.5, 0.14, 0.42, 0.06, toon(C.gold), 0, 4.25, 0);
-  const faceMat = glow('#ffffff', { map: boardTex });
-  const f1 = plane(g, 8.0, 1.6, faceMat, 0, 3.35, 0.185); f1.castShadow = false;
-  const f2 = plane(g, 8.0, 1.6, faceMat, 0, 3.35, -0.185); f2.rotation.y = Math.PI; f2.castShadow = false;
-  // estrella en la punta
-  const star = new THREE.Group();
-  star.position.set(0, 4.75, 0);
-  g.add(star);
-  const starShape = new THREE.Shape();
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 ? 0.22 : 0.5, a = Math.PI / 2 + (i * Math.PI) / 5;
-    if (i === 0) starShape.moveTo(Math.cos(a) * r, Math.sin(a) * r); else starShape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-  }
-  const starGeo = new THREE.ExtrudeGeometry(starShape, { depth: 0.14, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04, bevelSegments: 2 });
-  starGeo.center();
-  add(star, starGeo, toon(C.yellow, { emissive: '#ffb000', ei: 0.35 }), 0, 0, 0);
-  dynamic(star);
 
   // tambor colgante sobre el banco de máquinas
   const drum = new THREE.Group();
@@ -491,14 +450,11 @@ export function makePozo() {
   let acc = 0;
   g.userData.update = (t, dt) => {
     drum.rotation.y += dt * 0.35;
-    star.rotation.y += dt * 1.2;
-    star.position.y = 4.75 + Math.sin(t * 2) * 0.05;
     acc += dt;
     if (acc > 0.12) {
       acc = 0;
       chase++;
       amount += rand(3, 45);
-      redraw(boardTex);
       redraw(drumTex);
     }
   };

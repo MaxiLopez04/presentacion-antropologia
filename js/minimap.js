@@ -32,7 +32,6 @@ export function createMinimap(canvas, onMarker) {
     rect(MAP_RECTS.escalatorTop, '#a9b5c9');
     rect(MAP_RECTS.escalatorBottom, '#a9b5c9');
     rect(MAP_RECTS.vending, '#8fd6ea');
-    rect(MAP_RECTS.pozoSign, '#ffd23a');
     rect(MAP_RECTS.stairs, '#e8342f');
     rect(MAP_RECTS.atm, '#3fae49');
     rect(MAP_RECTS.elevator, '#a9b5c9');

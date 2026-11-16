@@ -709,6 +709,7 @@ function patrons(root, R, roulette) {
   [
     [1, G], [6, G], [8 + 1, G], [8 + 7, P], [8 + 11, G], [8 + 16, G], [8 + 22, P],
     [8 + 26, G], [8 + 29, G], [8 + 33, { type: 'youngM' }], [8 + 38, G], [8 + 40, G], [8 + 42, P], [8 + 45, G],
+    [8 + 50, G], [8 + 51, P], [8 + 53, G], [8 + 55, G], [8 + 56, P], [8 + 58, G],
   ].forEach(([i, o]) => R.slots[i] && seatAt(R.slots[i], o));
   // señor con muletas jugando en la máquina del Pozo MEGA más cercana a la cámara
   seatAt(R.slots[7], { side: -1 }, makeCrutchPlayer);
