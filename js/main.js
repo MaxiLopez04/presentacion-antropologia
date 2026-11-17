@@ -248,7 +248,7 @@ function updateMove(dt) {
   if (k >= 1) { move = null; m.onDone?.(); }
 }
 
-// ---------- Cinemática de la moza (diapositiva 3 -> 4) ----------
+// ---------- Cinemática de la moza (expendedora -> moza) ----------
 const VANTAGE = V(-14.7, 1.85, -2.3);
 function startCinematic() {
   cine = { t: 0, from: { pos: cam.pos.clone(), target: cam.target.clone(), fov: cam.fov }, shown: false };
@@ -279,7 +279,7 @@ function updateCinematic(dt) {
     cam.target.x = damp(cam.target.x, fr.target.x, 6, dt);
     cam.target.y = damp(cam.target.y, fr.target.y, 6, dt);
     cam.target.z = damp(cam.target.z, fr.target.z, 6, dt);
-    if (!c.shown) { c.shown = true; arrive(4); }
+    if (!c.shown) { c.shown = true; arrive(MOZA); }
     if (worker.done && c.t > T2 + 1.0) {
       cine = null;
       world.staffDoor.userData.target = 0;

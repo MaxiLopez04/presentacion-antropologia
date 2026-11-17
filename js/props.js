@@ -172,14 +172,20 @@ export function makeSlot(skinIndex = 0, opts = {}) {
   const lever = new THREE.Group();
   g.add(lever);
   // banqueta negra con base cromada
+  let stool = null;
   if (opts.stool !== false) {
-    cyl(g, 0.27, 0.3, 0.05, chrome, 0, 0.025, 0.88, 20);
-    cyl(g, 0.045, 0.045, 0.6, chrome, 0, 0.33, 0.88, 10);
-    tor(g, 0.2, 0.022, chrome, 0, 0.32, 0.88, Math.PI * 2, 20).rotation.x = Math.PI / 2;
-    rbox(g, 0.5, 0.13, 0.48, 0.06, black, 0, 0.68, 0.88, 3);
-    rbox(g, 0.46, 0.42, 0.08, 0.04, black, 0, 0.98, 1.12);
-    box(g, 0.04, 0.3, 0.04, chrome, 0, 0.8, 1.11);
+    // grupo propio (origen en el centro de la base) para poder correrla de lugar
+    stool = new THREE.Group();
+    stool.position.set(0, 0, 0.88);
+    g.add(stool);
+    cyl(stool, 0.27, 0.3, 0.05, chrome, 0, 0.025, 0, 20);
+    cyl(stool, 0.045, 0.045, 0.6, chrome, 0, 0.33, 0, 10);
+    tor(stool, 0.2, 0.022, chrome, 0, 0.32, 0, Math.PI * 2, 20).rotation.x = Math.PI / 2;
+    rbox(stool, 0.5, 0.13, 0.48, 0.06, black, 0, 0.68, 0, 3);
+    rbox(stool, 0.46, 0.42, 0.08, 0.04, black, 0, 0.98, 0.24);
+    box(stool, 0.04, 0.3, 0.04, chrome, 0, 0.8, 0.23);
   }
+  g.userData.stool = stool;
 
   g.userData.slot = {
     tex, lampMat, lever, screen,

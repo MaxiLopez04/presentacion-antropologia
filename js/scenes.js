@@ -296,6 +296,11 @@ export function buildRepair(root, R, slot) {
     }
   });
 
+  // la banqueta quedaba entre el técnico y el gabinete (parecía pegada a su
+  // cintura): con la máquina fuera de servicio, la sacamos
+  // (se quita de la escena: bakeStatic fusiona la geometría aunque esté oculta)
+  slot.userData.stool?.removeFromParent();
+
   // posición del frente de la máquina en el mundo
   slot.updateMatrixWorld(true);
   const W = (x, y, z) => slot.localToWorld(V(x, y, z));
@@ -315,7 +320,10 @@ export function buildRepair(root, R, slot) {
   R.updaters.push(tech.userData.update);
   const up = tech.userData.upper;
   rbox(up, 0.16, 0.08, 0.012, 0.01, toon('#ffffff'), -0.1, 0.55, 0.225); // parche con nombre
-  rbox(up, 0.5, 0.06, 0.5, 0.02, toon('#1d1e26'), 0, 0.12, 0); // cinturón
+  // cinturón: anillo que sigue la forma redondeada del torso (no una placa cuadrada)
+  const belt = cyl(up, 0.256, 0.238, 0.06, toon('#1d1e26'), 0, 0.12, 0, 24);
+  belt.scale.z = 0.86;
+  rbox(up, 0.07, 0.05, 0.02, 0.008, toon(C.gold), 0, 0.12, 0.212); // hebilla
   rbox(up, 0.12, 0.14, 0.05, 0.02, toon('#3a5a36'), 0.12, 0.3, 0.24); // bolsillo
   // llave inglesa en la mano derecha (que se mueve como ajustando)
   const wrench = new THREE.Group();
