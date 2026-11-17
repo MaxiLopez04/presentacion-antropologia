@@ -194,7 +194,7 @@ export function makeSlot(skinIndex = 0, opts = {}) {
 
 export function spinSlot(g, dur = 1.6) {
   const s = g.userData.slot;
-  if (s.spin > 0) return;
+  if (s.spin > 0 || s.broken) return;
   s.spin = dur;
   s.pull = 1;
 }
@@ -202,6 +202,7 @@ export function spinSlot(g, dur = 1.6) {
 export function updateSlots(slots, t, dt) {
   for (const g of slots) {
     const s = g.userData.slot;
+    if (s.broken) { s.lampMat.color.set(Math.sin(t * 10) > 0 ? '#ff2a2a' : '#3a0808'); continue; }
     const blink = s.spin > 0 ? (Math.sin(t * 30) > 0 ? 1 : 0.25) : 0.6 + 0.4 * Math.sin(t * 3 + s.phase);
     s.lampMat.color.copy(s.baseColor).multiplyScalar(0.35 + 0.65 * blink);
     s.nextSpin -= dt;

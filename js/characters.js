@@ -500,3 +500,37 @@ export function makeWorker() {
   root.visible = false;
   return api;
 }
+
+// Mochila (origen en el centro)
+export function makeBackpack(color = '#e8342f') {
+  const g = new THREE.Group();
+  const main = toon(color);
+  const dark = toon('#2a2c38');
+  rbox(g, 0.34, 0.42, 0.18, 0.08, main, 0, 0, 0, 3);
+  rbox(g, 0.26, 0.17, 0.07, 0.04, toon(color, { emissive: '#000000' }), 0, -0.08, 0.1);
+  rbox(g, 0.27, 0.025, 0.02, 0.01, dark, 0, 0.0, 0.135);
+  tor(g, 0.05, 0.015, dark, 0, 0.23, 0, Math.PI, 10).rotation.y = Math.PI / 2;
+  for (const s of [-1, 1]) rbox(g, 0.05, 0.36, 0.03, 0.015, dark, s * 0.09, 0, -0.1);
+  return g;
+}
+
+// DNI (tarjeta celeste con foto)
+let dniTex = null;
+export function makeIdCard() {
+  dniTex ||= canvasTex(172, 108, (ctx, w, h) => {
+    ctx.fillStyle = '#cfe8f6'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#5a9cc9'; ctx.fillRect(0, 0, w, 18);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif'; ctx.fillText('DNI · ARGENTINA', 8, 13);
+    ctx.fillStyle = '#e9c9a8'; ctx.fillRect(10, 28, 44, 56);
+    ctx.fillStyle = '#6b4a2b'; ctx.fillRect(10, 28, 44, 16);
+    ctx.fillStyle = '#7a8aa0';
+    for (let i = 0; i < 4; i++) ctx.fillRect(64, 32 + i * 14, 90 - i * 12, 6);
+  });
+  const g = new THREE.Group();
+  rbox(g, 0.12, 0.078, 0.006, 0.003, toon('#ffffff'), 0, 0, 0);
+  const face = plane(g, 0.112, 0.07, toon('#ffffff', { map: dniTex }), 0, 0, 0.0035);
+  face.castShadow = false;
+  const back = plane(g, 0.112, 0.07, toon('#ffffff', { map: dniTex }), 0, 0, -0.0035);
+  back.rotation.y = Math.PI; back.castShadow = false;
+  return g;
+}

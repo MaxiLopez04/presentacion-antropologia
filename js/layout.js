@@ -47,12 +47,15 @@ export const ROULETTE = { x: 850, y: 307 };
 
 // Marcas de las diapositivas (las X rojas del croquis)
 export const MARKERS = [
-  { slide: 1, x: 942, y: 285 },
-  { slide: 2, x: 622, y: 272 },
-  { slide: 3, x: 343, y: 238 },
-  { slide: 4, x: 450, y: 405 },
-  { slide: 5, x: 838, y: 462 },
-  { slide: 6, x: 905, y: 512 },
+  { slide: 1, x: 95, y: 262 },
+  { slide: 2, x: 942, y: 285 },
+  { slide: 3, x: 953, y: 505 },
+  { slide: 4, x: 622, y: 272 },
+  { slide: 5, x: 343, y: 238 },
+  { slide: 6, x: 450, y: 405 },
+  { slide: 7, x: 690, y: 398 },
+  { slide: 8, x: 838, y: 462 },
+  { slide: 9, x: 905, y: 512 },
 ];
 
 // Recorrido de la moza (flecha roja punteada)

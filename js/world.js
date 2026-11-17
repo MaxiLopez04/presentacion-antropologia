@@ -9,6 +9,7 @@ import { makeSlot, updateSlots, spinSlot, makeRoulette, makePozo, makeVending, m
 import { makePatron, makeWorker, makeCrutchPlayer, makeHearts, makeStanding } from './characters.js';
 import { buildFacade, DOOR_HALF } from './facade.js';
 import { buildCameras } from './security.js';
+import { buildReception, buildSecurityMap, buildRepair } from './scenes.js';
 
 const H = 5.5;          // altura del cielorraso
 const WALL_T = 0.3;
@@ -99,6 +100,11 @@ export function buildWorld(scene) {
 
   // ---- Jugadores ----
   patrons(root, R, roulette);
+
+  // ---- Escenas de las paradas nuevas ----
+  buildReception(root, R);
+  buildSecurityMap(root);
+  buildRepair(root, R, R.slots[8 + 23]); // tragamonedas descompuesta (fila junto a la escalera)
 
   // ---- Moza ----
   const worker = makeWorker();
@@ -653,7 +659,7 @@ function decor(root, R) {
   woodWall(XR - WALL_T / 2 - 0.08, Z(300), 6, -Math.PI / 2, abstract);
 
   // pósters chicos
-  poster(root, X(1000), 3.0, ZB - WALL_T / 2 - 0.02, Math.PI, 1.2, 1.2, (ctx, w, h) => {
+  poster(root, X(1021), 3.0, ZB - WALL_T / 2 - 0.02, Math.PI, 1.2, 1.2, (ctx, w, h) => {
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
     ctx.lineWidth = 22; ctx.strokeStyle = C.red;
     ctx.beginPath(); ctx.arc(w / 2, h / 2 - 10, 80, 0, Math.PI * 2); ctx.stroke();
@@ -685,7 +691,7 @@ function decor(root, R) {
   ext(152, 143, 'n'); ext(338, 143, 'n'); ext(712, 138, 'n'); ext(1132, 205, 'e');
   ext(1132, 428, 'e'); ext(132, 510, 's'); ext(368, 510, 's');
 
-  plant(root, X(130), Z(222), 1.1);
+  plant(root, X(130), Z(415), 1.1);
   plant(root, X(1110), Z(430), 1.2);
   plant(root, X(700), Z(268), 1.0);
 }

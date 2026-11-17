@@ -23,10 +23,13 @@ const DOOR_LANE = 0;
 // pos = dónde está la cámara, target = hacia dónde mira (metros)
 const VIEWS = {
   portada: { pos: V(FX - 19, 1.9, DOOR_MID), target: V(FX, 7.6, DOOR_MID), fov: 55 },
+  hall: { pos: V(-21.2, 3.0, -2.3), target: V(-26.3, 1.15, -5.0), fov: 48 },
   ruleta: { pos: V(18.6, 3.9, -5.2), target: V(6.5, 0.6, -0.6), fov: 55 },
+  mapa: { pos: V(18.3, 1.8, 6.1), target: V(18.55, 2.15, 10.0), fov: 50 },
   pozo: { pos: V(4.6, 2.6, 3.7), target: V(-2.6, 1.6, -1.4), fov: 55 },
   expendedora: { pos: V(-14.3, 1.7, -3.1), target: V(-11.2, 1.2, -4.6), fov: 52 },
   moza: null, // se calcula a partir de la posición final de la moza
+  tecnico: { pos: V(2.2, 1.85, 1.9), target: V(4.5, 1.05, 4.4), fov: 52 },
   cajero: { pos: V(13.5, 1.8, 5.8), target: V(15.0, 1.25, 8.8), fov: 52 },
   camaras: { pos: V(15.5, 2.0, 5.0), target: V(15.5, 3.25, 9.9), fov: 52 },
 };
@@ -78,6 +81,8 @@ VIEWS.moza = (() => {
   return { pos: f.pos, target: f.target, fov: 46 };
 })();
 const viewOf = (i) => VIEWS[SLIDES[i].id];
+// a partir de la parada de la moza, ella queda visible en la sala
+const MOZA = SLIDES.findIndex((s) => s.id === 'moza');
 
 // ---------- Estado de cámara ----------
 const cam = { pos: new THREE.Vector3(), target: new THREE.Vector3(), fov: 55 };
@@ -109,24 +114,30 @@ const NODES = {
   S3: V(-14.6, 2.2, 2.7),
   W: V(-15.0, 2.2, 0.0),    // pasillo entre los dos bancos de la izquierda
   D: V(9.5, 2.5, 3.5),      // hacia el cajero
-  S4: V(-1.6, 2.3, 3.2),    // frente a la moza (diapositiva 4)
+  S4: V(-1.6, 2.3, 3.2),    // frente a la moza
+  RE: V(18.6, 2.8, 0.6),    // al este de la ruleta (hacia el mapa de seguridad)
 };
 const EDGES = [
   ['E', 'N1'], ['N1', 'N2'], ['N2', 'N3'], ['N3', 'N4'], ['N4', 'N5'], ['N5', 'NM'], ['NM', 'NE'], ['NE', 'R1'],
   ['N5', 'M'], ['NE', 'M'], ['M', 'S1'], ['M', 'D'], ['S1', 'S2'], ['S2', 'S3'], ['S3', 'W'], ['W', 'N2'], ['S1', 'D'],
-  // paradas
-  ['v0', 'E'], ['v1', 'R1'], ['v1', 'M'], ['v2', 'S1'], ['v2', 'M'], ['v2', 'S2'],
-  ['v3', 'N2'], ['v3', 'W'], ['v4', 'S2'], ['v4', 'S4'], ['S4', 'S1'], ['S4', 'S2'], ['v5', 'D'], ['v6', 'v5'], ['v6', 'D'],
+  ['S4', 'S1'], ['S4', 'S2'],
+  // paradas (v:<id de la diapositiva>); el tercer valor son puntos intermedios
+  ['v:portada', 'E', DOOR_PATH], ['v:portada', 'v:hall', DOOR_PATH], ['v:hall', 'E'],
+  ['v:ruleta', 'R1'], ['v:ruleta', 'M'], ['v:ruleta', 'RE'], ['RE', 'v:mapa'],
+  ['v:mapa', 'D'], ['v:mapa', 'v:cajero'], ['v:mapa', 'v:camaras'],
+  ['v:pozo', 'S1'], ['v:pozo', 'M'], ['v:pozo', 'S2'],
+  ['v:expendedora', 'N2'], ['v:expendedora', 'W'],
+  ['v:moza', 'S2'], ['v:moza', 'S4'],
+  ['v:tecnico', 'S1'], ['v:tecnico', 'S4'],
+  ['v:cajero', 'D'], ['v:camaras', 'v:cajero'], ['v:camaras', 'D'],
 ];
 let graph = null;
 function buildGraph() {
   const pos = { ...NODES };
-  SLIDES.forEach((s, i) => { pos['v' + i] = viewOf(i).pos; });
+  SLIDES.forEach((s, i) => { pos['v:' + s.id] = viewOf(i).pos; });
   const adj = {};
-  for (const [a, b] of EDGES) {
+  for (const [a, b, via = []] of EDGES) {
     if (!pos[a] || !pos[b]) continue;
-    // la portada pasa por la puerta
-    const via = a === 'v0' ? DOOR_PATH : b === 'v0' ? DOOR_PATH.slice().reverse() : [];
     const len = [pos[a], ...via, pos[b]].reduce((acc, p, i, arr) => (i ? acc + p.distanceTo(arr[i - 1]) : 0), 0);
     (adj[a] ||= []).push({ to: b, len, via });
     (adj[b] ||= []).push({ to: a, len, via: via.slice().reverse() });
@@ -156,14 +167,14 @@ function shortestPath(from, to) {
 function buildPath(a, fromIdx, toIdx) {
   graph ||= buildGraph();
   // si la cámara quedó a mitad de un vuelo, arranca desde el nodo más cercano
-  let start = 'v' + fromIdx;
+  let start = 'v:' + SLIDES[fromIdx].id;
   if (a.distanceTo(graph.pos[start]) > 1.0) {
     let best = null, bd = Infinity;
     for (const k in NODES) { const d = a.distanceTo(NODES[k]); if (d < bd) { bd = d; best = k; } }
     start = best;
   }
   const pts = [a.clone()];
-  const route = shortestPath(start, 'v' + toIdx) || [viewOf(toIdx).pos.clone()];
+  const route = shortestPath(start, 'v:' + SLIDES[toIdx].id) || [viewOf(toIdx).pos.clone()];
   for (const p of route) if (p.distanceTo(pts[pts.length - 1]) > 0.3) pts.push(p);
   if (pts.length < 2) pts.push(viewOf(toIdx).pos.clone());
   return new THREE.CatmullRomCurve3(pts, false, 'centripetal');
@@ -292,14 +303,14 @@ function go(i) {
   current = i;
   updateNavUI();
   if (i > 0) world.doors.target = 1;
-  if (from === 3 && i === 4) { startCinematic(); return; }
-  if (i >= 4 && !worker.root.visible) worker.placeAtEnd();
+  if (SLIDES[from].id === 'expendedora' && SLIDES[i].id === 'moza') { startCinematic(); return; }
+  if (i >= MOZA && !worker.root.visible) worker.placeAtEnd();
   flyTo(viewOf(i), () => arrive(i), from, i);
 }
 
 function arrive(i) {
   if (i !== current) return;
-  if (i < 4) worker.hide();
+  if (i < MOZA) worker.hide();
   if (i === 0) world.doors.target = 0;
   showPanel(i);
 }
@@ -577,7 +588,7 @@ function tick() {
 // ---------- Inicio ----------
 const startAt = clamp(parseInt(location.hash.slice(1), 10) || 0, 0, SLIDES.length - 1);
 current = startAt;
-if (startAt >= 4) worker.placeAtEnd();
+if (startAt >= MOZA) worker.placeAtEnd();
 world.doors.target = world.doors.open = startAt > 0 ? 1 : 0;
 setCam(viewOf(startAt));
 updateNavUI();

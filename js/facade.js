@@ -190,7 +190,7 @@ export function buildFacade(root, R) {
   const frame = toon('#4aa3d8');
   const ix = X(118), dz1 = Z(210), dz2 = Z(440);
   for (const [a, b] of [[dz1, -DOOR_HALF], [DOOR_HALF, dz2]]) {
-    const g = box(root, 0.05, 3.0, b - a, toon('#c9f0ff', { opacity: 0.28 }), ix, 1.5, (a + b) / 2);
+    const g = box(root, 0.05, 3.0, b - a, toon('#c9f0ff', { opacity: 0.12 }), ix, 1.5, (a + b) / 2);
     g.castShadow = false;
     box(root, 0.12, 3.0, 0.12, frame, ix, 1.5, a);
     box(root, 0.12, 3.0, 0.12, frame, ix, 1.5, b);

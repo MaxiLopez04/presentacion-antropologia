@@ -8,7 +8,7 @@ croquis y se detiene en cada parada/diapositiva.
 | Acción | Tecla / gesto |
 |---|---|
 | Siguiente / anterior | `→` / `←` (también `Espacio`, `PageDown`/`PageUp`, o las flechas en pantalla) |
-| Ir a una parada | `0`–`6`, los puntitos bajo el contador, o las marcas del minimapa |
+| Ir a una parada | `0`–`9`, los puntitos bajo el contador, o las marcas del minimapa |
 | Pantalla completa | `F` |
 | Mostrar/ocultar minimapa | `M` |
 | Ocultar toda la interfaz | `H` |
