@@ -4,16 +4,17 @@ import {
   C, X, Z, P, deg, toon, glow, rbox, box, cyl, sph, tor, cap, plane, cone, add, canvasTex, redraw, txt, rr,
   dynamic, bakeStatic, rand,
 } from './util.js';
-import { SLOTS, MEGA_SLOTS, ROULETTE, WORKER_PATH } from './layout.js';
+import { SLOTS, MEGA_SLOTS, ROULETTE, WORKER_PATH, HALL } from './layout.js';
 import { makeSlot, updateSlots, spinSlot, makeRoulette, makePozo, makeVending, makeCashStation } from './props.js';
 import { makePatron, makeWorker, makeCrutchPlayer, makeHearts, makeStanding } from './characters.js';
-import { buildFacade, DOOR_HALF } from './facade.js';
+import { buildFacade, DOOR_HALF, XH } from './facade.js';
 import { buildCameras } from './security.js';
 import { buildReception, buildSecurityMap, buildRepair } from './scenes.js';
 
 const H = 5.5;          // altura del cielorraso
 const WALL_T = 0.3;
 const XL = X(45), XR = X(1145), ZT = Z(120), ZB = Z(528);
+const HZ1 = Z(HALL.y1), HZ2 = Z(HALL.y2); // lados norte y sur del hall
 // Escalera (no mecánica): un solo tramo que sube desde el lado de la
 // entrada (oeste) hacia adentro (este) hasta el primer piso.
 const STAIR = (() => {
@@ -121,7 +122,7 @@ export function buildWorld(scene) {
   R.updaters.push((t, dt) => {
     const d = R.doors;
     d.open += (d.target - d.open) * (1 - Math.exp(-4 * dt));
-    for (const p of d.panels) p.rotation.y = p.userData.base + p.userData.dir * d.open * deg(80);
+    for (const p of d.panels) p.rotation.y = p.userData.base + p.userData.dir * d.open * p.userData.angle;
     staffDoor.rotation.y = staffDoor.userData.base + staffDoor.userData.open * deg(95);
     staffDoor.userData.open += ((staffDoor.userData.target || 0) - staffDoor.userData.open) * (1 - Math.exp(-5 * dt));
   });
@@ -155,6 +156,7 @@ function lights(scene) {
     [X(239), 3.3, Z(340), '#ffc98a', 16, 10],   // banco de la ex barra
     [X(376) - 1.8, 2.8, Z(232), '#8fe8ff', 6, 6],  // expendedora
     [X(110), 3.2, 0, '#ffd8a0', 14, 9],         // hall de entrada
+    [(XH + XL) / 2, 3.3, -1.2, '#ffe6c4', 9, 9],   // hall ampliado (recepción)
     [X(560), 3.2, Z(425), '#ffcf9a', 16, 11],   // moza / escalera
     [X(900), 3.3, Z(175), '#ff9fd0', 16, 12],   // fila superior derecha
     [X(1030), 3.2, Z(300), '#9fb0ff', 12, 10],  // grupo derecho
@@ -204,10 +206,27 @@ function floorAndCeiling(root, R) {
   carpet.repeat.set(1 / 4, 1 / 4);
 
   const fs = new THREE.Shape();
-  fs.moveTo(XL, -ZB); fs.lineTo(XR, -ZB); fs.lineTo(XR, -ZT); fs.lineTo(XL, -ZT); fs.closePath();
+  fs.moveTo(XL, -ZB); fs.lineTo(XR, -ZB); fs.lineTo(XR, -ZT); fs.lineTo(XL, -ZT);
+  fs.lineTo(XL, -HZ1); fs.lineTo(XH, -HZ1); fs.lineTo(XH, -HZ2); fs.lineTo(XL, -HZ2); fs.closePath(); // + hall ampliado
   const floor = add(root, new THREE.ShapeGeometry(fs), toon('#ffffff', { map: carpet }), 0, 0, 0);
   floor.rotation.x = -Math.PI / 2;
   floor.castShadow = false;
+
+  // hall de entrada: piso de azulejos blancos (desde la puerta hasta la línea de vidrio)
+  const TILE = 0.6;
+  const tileTex = canvasTex(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#f7f6f2'; ctx.fillRect(0, 0, w, h);
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(210,214,224,.35)');
+    ctx.fillStyle = g; ctx.fillRect(6, 6, w - 12, h - 12);
+    ctx.strokeStyle = '#c6c8d2'; ctx.lineWidth = 8; ctx.strokeRect(0, 0, w, h);
+  });
+  tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping;
+  const hx1 = XH + WALL_T / 2, hx2 = X(118);
+  tileTex.repeat.set((hx2 - hx1) / TILE, (HZ2 - HZ1) / TILE);
+  const tilesFloor = plane(root, hx2 - hx1, HZ2 - HZ1, toon('#ffffff', { map: tileTex }), (hx1 + hx2) / 2, 0.012, (HZ1 + HZ2) / 2);
+  tilesFloor.rotation.x = -Math.PI / 2;
+  tilesFloor.castShadow = false;
 
   // cielorraso claro con spots
   const ceilTex = canvasTex(256, 256, (ctx, w, h) => {
@@ -219,7 +238,8 @@ function floorAndCeiling(root, R) {
   ceilTex.wrapS = ceilTex.wrapT = THREE.RepeatWrapping;
   ceilTex.repeat.set(1 / 3, 1 / 3);
   const cs = new THREE.Shape();
-  cs.moveTo(XL, ZT); cs.lineTo(XL, ZB); cs.lineTo(XR, ZB); cs.lineTo(XR, ZT); cs.closePath();
+  cs.moveTo(XL, ZT); cs.lineTo(XL, HZ1); cs.lineTo(XH, HZ1); cs.lineTo(XH, HZ2); cs.lineTo(XL, HZ2); // + hall ampliado
+  cs.lineTo(XL, ZB); cs.lineTo(XR, ZB); cs.lineTo(XR, ZT); cs.closePath();
   // huecos: escalera mecánica y los dos extremos de la escalera
   const holes = [
     [-1.5, X(702), ZT + WALL_T / 2, Z(217) + 0.05],
@@ -258,9 +278,10 @@ function floorAndCeiling(root, R) {
   const poolGeo = new THREE.PlaneGeometry(2.6, 2.6);
   poolGeo.rotateX(-Math.PI / 2);
   const spots = [];
-  for (let x = Math.ceil((XL - 1.5) / 3) * 3 + 1.5; x < XR - 0.5; x += 3) {
+  for (let x = Math.ceil((XH - 1.5) / 3) * 3 + 1.5; x < XR - 0.5; x += 3) {
     for (let z = Math.ceil((ZT - 1.5) / 3) * 3 + 1.5; z < ZB - 0.5; z += 3) {
-      if (x > XL + 0.5 && z > ZT + 0.5) spots.push([x, z]);
+      // en el hall no: sobre los azulejos blancos encandilan
+      if (x > X(118) + 0.5 && z > ZT + 0.5) spots.push([x, z]);
     }
   }
   const pools = new THREE.InstancedMesh(poolGeo, poolMat, spots.length);
@@ -312,9 +333,14 @@ function walls(root) {
   seg(XL - WALL_T / 2, ZT, XR + WALL_T / 2, ZT);
   seg(XL - WALL_T / 2, ZB, XR + WALL_T / 2, ZB);
   seg(XR, ZT, XR, ZB);
-  seg(XL, ZT, XL, -DOOR_HALF);
-  seg(XL, DOOR_HALF, XL, ZB);
-  seg(XL, -DOOR_HALF, XL, DOOR_HALF, 3.0, H);
+  seg(XL, ZT, XL, HZ1);
+  seg(XL, HZ2, XL, ZB);
+  // hall ampliado hacia la calle: paredes laterales y nueva pared de entrada
+  seg(XH - WALL_T / 2, HZ1, XL, HZ1);
+  seg(XH - WALL_T / 2, HZ2, XL, HZ2);
+  seg(XH, HZ1, XH, -DOOR_HALF);
+  seg(XH, DOOR_HALF, XH, HZ2);
+  seg(XH, -DOOR_HALF, XH, DOOR_HALF, 3.0, H);
 
   // tiras de LED azul en las paredes
   const neon = (x1, z1, x2, z2) => {

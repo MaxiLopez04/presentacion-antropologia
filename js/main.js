@@ -10,7 +10,7 @@ import { buildWorld } from './world.js';
 import { SLIDES, META } from './slides.js';
 import { createMinimap } from './minimap.js';
 import { X, Z, ease, clamp, damp } from './util.js';
-import { FX } from './facade.js';
+import { FX, XH } from './facade.js';
 import { spinSlot } from './props.js';
 import { initRemote } from './remote-host.js';
 
@@ -23,7 +23,7 @@ const DOOR_LANE = 0;
 // pos = dónde está la cámara, target = hacia dónde mira (metros)
 const VIEWS = {
   portada: { pos: V(FX - 19, 1.9, DOOR_MID), target: V(FX, 7.6, DOOR_MID), fov: 55 },
-  hall: { pos: V(-21.2, 3.0, -2.3), target: V(-26.3, 1.15, -5.0), fov: 48 },
+  hall: { pos: V(-28.9, 2.3, 1.9), target: V(-29.9, 1.5, -4.4), fov: 54 },
   ruleta: { pos: V(18.6, 3.9, -5.2), target: V(6.5, 0.6, -0.6), fov: 55 },
   mapa: { pos: V(18.3, 1.8, 6.1), target: V(18.55, 2.15, 10.0), fov: 50 },
   pozo: { pos: V(4.6, 2.6, 3.7), target: V(-2.6, 1.6, -1.4), fov: 55 },
@@ -97,7 +97,9 @@ function setCam(v) { cam.pos.copy(v.pos); cam.target.copy(v.target); cam.fov = v
 // encima de las cabezas y por debajo de los carteles), como si caminara.
 // Cada nodo es un punto de un pasillo; las aristas unen nodos que se ven
 // sin obstáculos en el medio. Las paradas se conectan a sus nodos cercanos.
-const DOOR_PATH = [V(FX - 3, 1.85, DOOR_LANE), V(FX, 1.85, DOOR_LANE), V(XL, 1.85, DOOR_LANE), V(X(118), 1.95, DOOR_LANE)];
+// DOOR_IN: de la calle hasta adentro del hall; DOOR_PATH sigue hasta la sala
+const DOOR_IN = [V(FX - 3, 1.85, DOOR_LANE), V(FX, 1.85, DOOR_LANE), V(XH, 1.85, DOOR_LANE), V((XH + XL) / 2, 2.0, DOOR_LANE)];
+const DOOR_PATH = [...DOOR_IN, V(X(118), 1.95, DOOR_LANE)];
 const NODES = {
   E: V(-21.5, 2.2, -1.0),   // hall de entrada
   N1: V(-19.2, 2.3, -3.0),  // pasillo norte (entre bancos y escalera mecánica)
@@ -122,7 +124,7 @@ const EDGES = [
   ['N5', 'M'], ['NE', 'M'], ['M', 'S1'], ['M', 'D'], ['S1', 'S2'], ['S2', 'S3'], ['S3', 'W'], ['W', 'N2'], ['S1', 'D'],
   ['S4', 'S1'], ['S4', 'S2'],
   // paradas (v:<id de la diapositiva>); el tercer valor son puntos intermedios
-  ['v:portada', 'E', DOOR_PATH], ['v:portada', 'v:hall', DOOR_PATH], ['v:hall', 'E'],
+  ['v:portada', 'E', DOOR_PATH], ['v:portada', 'v:hall', DOOR_IN], ['v:hall', 'E'],
   ['v:ruleta', 'R1'], ['v:ruleta', 'M'], ['v:ruleta', 'RE'], ['RE', 'v:mapa'],
   ['v:mapa', 'D'], ['v:mapa', 'v:cajero'], ['v:mapa', 'v:camaras'],
   ['v:pozo', 'S1'], ['v:pozo', 'M'], ['v:pozo', 'S2'],

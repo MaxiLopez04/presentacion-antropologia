@@ -2,10 +2,12 @@
 import * as THREE from 'three';
 import { C, X, Z, toon, glow, rbox, box, cyl, sph, tor, plane, cone, add, canvasTex, redraw, txt, rr, dynamic } from './util.js';
 import { META } from './slides.js';
+import { HALL } from './layout.js';
 
 const H = 5.5;
-const XL = X(45), ZT = Z(120), ZB = Z(528);
-export const FX = XL - 2.2;          // plano de la fachada (2,2 m delante de la pared)
+const ZT = Z(120), ZB = Z(528);
+export const XH = X(HALL.x1);        // pared de entrada del hall (ampliado hacia la calle)
+export const FX = XH - 2.2;          // plano de la fachada (2,2 m delante de la pared)
 export const DOOR_HALF = 2.6;        // puerta central: z -2.6 .. 2.6
 const BAY = [3.7, 7.4];              // arcos laterales (con escaleras que suben)
 const TOP = 8.6;                     // altura de la baranda superior
@@ -17,7 +19,7 @@ export function buildFacade(root, R) {
   // de noche la fachada está bañada por reflectores cálidos (toque de emisivo)
   const lit = { emissive: '#ff9a4a', ei: 0.11 };
   const sand = toon(SAND, lit), sandD = toon(SAND_D, lit), sandL = toon(SAND_L, lit);
-  const depth = XL - FX;
+  const depth = XH - FX;
 
   // ---------- bloques macizos entre la fachada y la pared ----------
   const solids = [[Z0, -BAY[1]], [-BAY[0], -DOOR_HALF], [DOOR_HALF, BAY[0]], [BAY[1], Z1]];
@@ -143,8 +145,8 @@ export function buildFacade(root, R) {
   cs.castShadow = false;
   // pantallas sobre la puerta (como en la foto)
   for (const z of [-1.2, 1.2]) {
-    rbox(root, 0.08, 0.5, 1.3, 0.03, toon(C.ink), XL - 0.25, 3.6, z);
-    plane(root, 1.2, 0.42, glow('#5fd0ff'), XL - 0.3, 3.6, z).rotation.y = -Math.PI / 2;
+    rbox(root, 0.08, 0.5, 1.3, 0.03, toon(C.ink), XH - 0.25, 3.6, z);
+    plane(root, 1.2, 0.42, glow('#5fd0ff'), XH - 0.3, 3.6, z).rotation.y = -Math.PI / 2;
   }
   // faroles de pared
   for (const z of [-9.6, 9.6, -3.15, 3.15]) {
@@ -168,20 +170,24 @@ export function buildFacade(root, R) {
     add(root, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.035, 6), toon('#1c1d24'));
     for (let i = 0; i <= n; i += 2) cyl(root, 0.02, 0.02, 1.0, toon('#1c1d24'), FX + 0.45, rise * i + 0.5, zStart + dir * run * i, 6);
     // interior del arco
-    box(root, 0.1, H, BAY[1] - BAY[0] - 0.02, toon('#bfa577'), XL - 0.3, H / 2, dir * (BAY[0] + BAY[1]) / 2);
+    box(root, 0.1, H, BAY[1] - BAY[0] - 0.02, toon('#bfa577'), XH - 0.3, H / 2, dir * (BAY[0] + BAY[1]) / 2);
   }
 
   // ---------- puertas de vidrio (pared y línea interior) ----------
   const panels = [];
-  const lineX = [XL, X(118)];
+  const lineX = [XH, X(118)];
   for (const x of lineX) {
+    // las de la calle abren hacia afuera (si no, tapan el hall); con menos
+    // ángulo para no chocar con el frente de la fachada
+    const out = x === XH ? -1 : 1;
+    const angle = x === XH ? Math.PI * 0.3 : Math.PI * 0.44;
     const p1 = doorPanel(DOOR_HALF, 3.0);
     p1.position.set(x, 0, -DOOR_HALF);
-    p1.userData.base = 0; p1.userData.dir = 1;
+    p1.userData.base = 0; p1.userData.dir = out; p1.userData.angle = angle;
     const p2 = doorPanel(DOOR_HALF, 3.0);
     p2.position.set(x, 0, DOOR_HALF);
     p2.rotation.y = Math.PI;
-    p2.userData.base = Math.PI; p2.userData.dir = -1;
+    p2.userData.base = Math.PI; p2.userData.dir = -out; p2.userData.angle = angle;
     root.add(p1, p2);
     panels.push(p1, p2);
   }
@@ -197,8 +203,6 @@ export function buildFacade(root, R) {
     box(root, 0.12, 0.14, b - a, frame, ix, 0.07, (a + b) / 2);
   }
   box(root, 0.2, 0.25, dz2 - dz1, frame, ix, 3.12, (dz1 + dz2) / 2);
-  // alfombra del hall
-  rbox(root, X(118) - XL + 1.2, 0.03, 2 * DOOR_HALF - 0.4, 0.01, toon(C.red), (XL + X(118)) / 2 + 0.4, 0.015, 0);
 
   // ---------- vereda, calle, palmeras, rejas ----------
   const tiles = canvasTex(128, 128, (ctx, w, h) => {

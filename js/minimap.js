@@ -1,5 +1,5 @@
 // Minimapa dibujado a partir del croquis (coordenadas en px)
-import { BUILDING, SLOTS, MEGA_SLOTS, ROULETTE, MARKERS, MAP_RECTS, WORKER_PATH, DOME_CAMS, ATM_CAMS } from './layout.js';
+import { BUILDING, HALL, SLOTS, MEGA_SLOTS, ROULETTE, MARKERS, MAP_RECTS, WORKER_PATH, DOME_CAMS, ATM_CAMS } from './layout.js';
 import { toPx } from './util.js';
 
 export function createMinimap(canvas, onMarker) {
@@ -8,8 +8,8 @@ export function createMinimap(canvas, onMarker) {
   canvas.width = W * dpr;
   canvas.height = Hh * dpr;
   const ctx = canvas.getContext('2d');
-  const s = W / (BUILDING.x2 - BUILDING.x1 + 20);
-  const tx = (x) => (x - BUILDING.x1 + 10) * s;
+  const s = W / (BUILDING.x2 - HALL.x1 + 20);
+  const tx = (x) => (x - HALL.x1 + 10) * s;
   const ty = (y) => (y - BUILDING.y1 + 4) * s;
   const rect = ([x1, y1, x2, y2], fill) => { ctx.fillStyle = fill; ctx.fillRect(tx(x1), ty(y1), (x2 - x1) * s, (y2 - y1) * s); };
 
@@ -23,9 +23,15 @@ export function createMinimap(canvas, onMarker) {
     ctx.fillRect(tx(BUILDING.x1), ty(BUILDING.y1), (BUILDING.x2 - BUILDING.x1) * s, (BUILDING.y2 - BUILDING.y1) * s);
     ctx.strokeStyle = '#1b1f3b'; ctx.lineWidth = 2.5;
     ctx.strokeRect(tx(BUILDING.x1), ty(BUILDING.y1), (BUILDING.x2 - BUILDING.x1) * s, (BUILDING.y2 - BUILDING.y1) * s);
-    // entrada
+    // hall de entrada (ampliado hacia la calle)
+    ctx.fillStyle = '#e9e6f2';
+    ctx.fillRect(tx(HALL.x1), ty(HALL.y1), (BUILDING.x1 - HALL.x1) * s + 2, (HALL.y2 - HALL.y1) * s);
+    ctx.strokeRect(tx(HALL.x1), ty(HALL.y1), (BUILDING.x1 - HALL.x1) * s, (HALL.y2 - HALL.y1) * s);
+    ctx.fillStyle = '#e9e6f2';
+    ctx.fillRect(tx(BUILDING.x1) - 1.5, ty(HALL.y1) + 1.5, 3, (HALL.y2 - HALL.y1) * s - 3);
+    // puerta
     ctx.fillStyle = '#5fd0f0';
-    ctx.fillRect(tx(BUILDING.x1) - 2, ty(210), 4, (440 - 210) * s);
+    ctx.fillRect(tx(HALL.x1) - 2, ty(272), 4, (376 - 272) * s);
     // bloques
     rect(MAP_RECTS.guard, '#2346a8');
     rect(MAP_RECTS.staff, '#ff9f43');

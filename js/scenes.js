@@ -3,22 +3,24 @@
 import * as THREE from 'three';
 import { C, X, Z, toon, glow, rbox, box, cyl, sph, tor, plane, cone, add, canvasTex, txt, rr, dynamic, limb } from './util.js';
 import { makeStanding, makeBackpack, makeIdCard } from './characters.js';
-import { BUILDING, SLOTS, MEGA_SLOTS, ROULETTE, MAP_RECTS, DOME_CAMS, ATM_CAMS } from './layout.js';
+import { BUILDING, HALL, SLOTS, MEGA_SLOTS, ROULETTE, MAP_RECTS, DOME_CAMS, ATM_CAMS } from './layout.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const ZB = Z(528) - 0.15; // cara interna de la pared sur
 
 // =============================================================
 //  Hall: recepcionista de traje, guardarropa y gente dejando
-//  la mochila / mostrando el DNI (a la izquierda al entrar)
+//  la mochila / mostrando el DNI (en la pared izquierda al entrar)
 // =============================================================
 export function buildReception(root, R) {
-  // Mostrador sobre el lado izquierdo del hall (mirando hacia adentro, al este)
-  const dx = -26.55, dz = -4.1;
+  // Mostrador contra la pared izquierda (norte) del hall ampliado, mirando
+  // hacia el centro (sur). Todo lo de la recepción va en un grupo: +z local
+  // es hacia el centro del hall y x local corre a lo largo de la pared.
+  const rc = new THREE.Group();
+  rc.position.set((X(HALL.x1) + X(45)) / 2 - 0.2, 0, Z(HALL.y1) + 1.25);
+  root.add(rc);
   const desk = new THREE.Group();
-  desk.position.set(dx, 0, dz);
-  desk.rotation.y = Math.PI / 2; // su frente (+z local) mira al este
-  root.add(desk);
+  rc.add(desk);
   rbox(desk, 2.2, 1.0, 0.6, 0.06, toon('#4a2c20'), 0, 0.5, 0);
   rbox(desk, 2.35, 0.07, 0.72, 0.03, toon('#efe3c8'), 0, 1.04, 0);
   rbox(desk, 2.25, 0.06, 0.62, 0.02, toon(C.gold), 0, 0.06, 0);
@@ -26,9 +28,13 @@ export function buildReception(root, R) {
     ctx.fillStyle = '#1b1f3b'; rr(ctx, 0, 0, w, h, 24); ctx.fill();
     ctx.strokeStyle = C.gold; ctx.lineWidth = 8; rr(ctx, 8, 8, w - 16, h - 16, 18); ctx.stroke();
     txt(ctx, 'RECEPCIÓN', w / 2, 74, { size: 76, fill: C.yellow, lw: 0 });
-    txt(ctx, 'Dejá tu mochila · Mostrá tu DNI', w / 2, 148, { font: 'Fredoka', weight: '600', size: 38, fill: '#ffffff', lw: 0 });
+    txt(ctx, 'Dejá tu mochila · Mostrá tu DNI', w / 2, 148, { font: 'Fredoka', weight: '600', size: 33, fill: '#ffffff', lw: 0 });
   });
   plane(desk, 1.8, 0.56, glow('#e8e0d0', { map: signTex }), 0, 0.58, 0.305).castShadow = false;
+  // el mismo cartel, grande, en la pared de atrás de la recepcionista
+  const wz = -1.25 + 0.15; // cara interna de la pared norte (en coords del grupo)
+  rbox(rc, 2.75, 0.95, 0.06, 0.04, toon(C.gold), 0, 2.75, wz + 0.03);
+  plane(rc, 2.6, 0.81, glow('#e8e0d0', { map: signTex }), 0, 2.75, wz + 0.065).castShadow = false;
   rbox(desk, 0.34, 0.04, 0.24, 0.01, toon('#2a2c38'), 0.65, 1.1, 0.12);
   for (let i = 0; i < 3; i++) {
     const card = makeIdCard();
@@ -65,15 +71,14 @@ export function buildReception(root, R) {
   });
   plane(root, 1.3, 0.3, glow('#e8e0d0', { map: lbl }), sx, 2.35, sz + 0.22).castShadow = false;
 
-  const add2 = (o) => { root.add(o); R.updaters.push(o.userData.update); return o; };
+  const add2 = (o) => { rc.add(o); R.updaters.push(o.userData.update); return o; };
 
   // recepcionista de traje (detrás del mostrador, mirando a la sala)
   const rec = makeStanding({
     type: 'youngW', body: '#1c1c26', pants: '#1c1c26', hair: '#2a1a12',
     handPos: [V(-0.24, 0.36, 0.28), V(0.16, 0.5, 0.34)],
   });
-  rec.position.set(dx - 0.6, 0, dz + 0.1);
-  rec.rotation.y = Math.PI / 2;
+  rec.position.set(-0.1, 0, -0.6);
   add2(rec);
   const up = rec.userData.upper;
   const v = cone(up, 0.08, 0.22, toon('#ffffff'), 0, 0.6, 0.2, 3);
@@ -87,8 +92,8 @@ export function buildReception(root, R) {
 
   // visitante dejando la mochila sobre el mostrador
   const v1 = makeStanding({ type: 'youngM', body: '#3b7be8', handPos: [V(-0.17, 0.44, 0.34), V(0.17, 0.44, 0.34)] });
-  v1.position.set(dx + 0.85, 0, dz - 0.45);
-  v1.rotation.y = -Math.PI / 2;
+  v1.position.set(0.45, 0, 0.85);
+  v1.rotation.y = Math.PI;
   add2(v1);
   const bag = makeBackpack('#ff8a1f');
   bag.position.set(0, 0.5, 0.44);
@@ -96,8 +101,8 @@ export function buildReception(root, R) {
 
   // señora mostrando el DNI
   const v2 = makeStanding({ type: 'grandma', handPos: [null, V(0.18, 0.66, 0.3)] });
-  v2.position.set(dx + 0.95, 0, dz + 0.75);
-  v2.rotation.y = -Math.PI / 2 - 0.3;
+  v2.position.set(-0.75, 0, 0.95);
+  v2.rotation.y = Math.PI - 0.3;
   add2(v2);
   const card2 = makeIdCard();
   card2.position.set(0.18, 0.74, 0.33);
@@ -106,8 +111,8 @@ export function buildReception(root, R) {
 
   // chica esperando con la mochila puesta y el DNI en la mano
   const v3 = makeStanding({ type: 'youngW', body: '#3fae49', handPos: [null, V(0.3, 0.42, 0.18)] });
-  v3.position.set(dx + 1.75, 0, dz - 1.05);
-  v3.rotation.y = -Math.PI / 2 + 0.6;
+  v3.position.set(1.05, 0, 1.75);
+  v3.rotation.y = Math.PI + 0.6;
   add2(v3);
   const bag3 = makeBackpack('#7b3fc4');
   bag3.position.set(0, 0.38, -0.3);

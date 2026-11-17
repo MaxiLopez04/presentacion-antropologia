@@ -8,6 +8,11 @@
 
 export const BUILDING = { x1: 45, y1: 120, x2: 1145, y2: 528 };
 
+// Hall de entrada ampliado hacia la calle (fuera del croquis original):
+// va desde la nueva pared de entrada (x1) hasta la pared vieja del
+// edificio (BUILDING.x1), entre y1 e y2. La fachada se corre con él.
+export const HALL = { x1: -55, y1: 210, y2: 440 };
+
 // [x, y, yaw, skin]
 export const SLOTS = [
   // fila superior izquierda
@@ -47,7 +52,7 @@ export const ROULETTE = { x: 850, y: 307 };
 
 // Marcas de las diapositivas (las X rojas del croquis)
 export const MARKERS = [
-  { slide: 1, x: 95, y: 262 },
+  { slide: 1, x: -5, y: 262 },
   { slide: 2, x: 942, y: 285 },
   { slide: 3, x: 953, y: 505 },
   { slide: 4, x: 622, y: 272 },
