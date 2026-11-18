@@ -28,14 +28,14 @@ export function buildReception(root, R) {
   box(root, nw, 0.03, NICHE.depth, toon('#d8cbb4'), cx, 0.0, zm).castShadow = false;   // piso
   box(root, nw + 0.2, 0.2, NICHE.depth + 0.15, wood, cx, -0.1, zm).castShadow = false; // base
   box(root, nw + 0.2, ah, 0.2, wood, cx, ah / 2, zb - 0.1);                              // fondo
-  box(root, 0.2, ah, NICHE.depth, wood, nx1 - 0.1, ah / 2, zm);                          // costado oeste
-  box(root, nw + 0.2, 0.14, NICHE.depth, toon('#f2ebe0'), cx, ah + 0.07, zm);           // techo
+  box(root, 0.2, ah, NICHE.depth + 0.15, wood, nx1 - 0.1, ah / 2, zm + 0.075);          // costado oeste (hasta la cara de la pared)
+  box(root, nw + 0.2, 0.14, NICHE.depth - 0.15, toon('#f2ebe0'), cx, ah + 0.07, zm - 0.075); // techo (termina en el dintel)
   // listones verticales en el fondo (como el revestimiento de la foto)
   for (let x = nx1 + 0.25; x < nx2 - 0.1; x += 0.3) box(root, 0.03, ah, 0.02, woodD, x, ah / 2, zb + 0.005);
   // tabique bajo entre recepción y seguridad (deja pasar detrás de la barra)
   box(root, 0.1, ah, NICHE.depth - 1.15, wood, nsp, ah / 2, zb + (NICHE.depth - 1.15) / 2);
   // tabique del pasillo del personal (separa la barra del pasillo hacia la puerta)
-  box(root, 0.1, ah, NICHE.depth - 1.15, wood, nce + 0.05, ah / 2, zf - (NICHE.depth - 1.15) / 2);
+  box(root, 0.1, ah, NICHE.depth - 1.0, wood, nce + 0.05, ah / 2, zf + 0.15 - (NICHE.depth - 1.0) / 2);
   // tira de LED en el techo y en las esquinas del fondo
   box(root, nce - nx1 - 0.3, 0.04, 0.08, glow('#ffd79a'), (nx1 + nce) / 2, ah - 0.02, zf - 0.3).castShadow = false;
   for (const x of [nx1 + 0.05, nsp - 0.08, nsp + 0.08, nce - 0.05]) box(root, 0.04, ah - 0.1, 0.04, glow('#ffd79a'), x, ah / 2, zb + 0.05).castShadow = false;

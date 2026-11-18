@@ -325,8 +325,10 @@ function walls(root) {
     const lx = Math.abs(x2 - x1) || WALL_T, lz = Math.abs(z2 - z1) || WALL_T;
     box(root, lx, y1 - y0, lz, wall, cx, (y0 + y1) / 2, cz);
     if (y0 === 0) {
-      box(root, lx + (lx === WALL_T ? 0.08 : 0), 1.1, lz + (lz === WALL_T ? 0.08 : 0), wains, cx, 0.55, cz);
-      box(root, lx + (lx === WALL_T ? 0.12 : 0), 0.08, lz + (lz === WALL_T ? 0.12 : 0), trim, cx, 1.12, cz);
+      // (zócalo y moldura apenas más largos que la pared, para que sus
+      // extremos no queden en el mismo plano que los de la pared y titilen)
+      box(root, lx + (lx === WALL_T ? 0.08 : 0.01), 1.1, lz + (lz === WALL_T ? 0.08 : 0.01), wains, cx, 0.55, cz);
+      box(root, lx + (lx === WALL_T ? 0.12 : 0.02), 0.08, lz + (lz === WALL_T ? 0.12 : 0.02), trim, cx, 1.12, cz);
     }
   };
   seg(XL - WALL_T / 2, ZT, XR + WALL_T / 2, ZT);
@@ -335,9 +337,9 @@ function walls(root) {
   seg(XL, HZ2, XL, ZB);
   // hall ampliado hacia la calle: paredes laterales y nueva pared de entrada
   // pared norte con la abertura del nicho de la recepción (scenes.js)
-  seg(XH - WALL_T / 2, HZ1, X(NICHE.x1), HZ1);
+  seg(XH - WALL_T / 2, HZ1, X(NICHE.x1) - 0.2, HZ1);
   seg(X(NICHE.x1), HZ1, X(NICHE.counterEnd), HZ1, NICHE.height, H);
-  seg(X(NICHE.counterEnd), HZ1, X(NICHE.x2) + WALL_T / 2, HZ1);
+  seg(X(NICHE.counterEnd) + 0.1, HZ1, X(NICHE.x2) + WALL_T / 2, HZ1);
   // cara este del bloque (dentro del casino) con la puerta del personal
   const ex = X(NICHE.x2), dzc = HZ1 - NICHE.depth / 2;
   seg(ex, ZT, ex, dzc - 0.55);
