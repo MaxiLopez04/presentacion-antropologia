@@ -568,8 +568,11 @@ window.addEventListener('resize', () => {
   resizeComposer();
 });
 
-// Calidad adaptativa: si la PC va lenta, baja la resolución interna
+// Calidad adaptativa: si la PC va lenta, baja la resolución interna, pero
+// nunca por debajo de 1 píxel por píxel de pantalla (si no, se ve borroso).
+// En pantallas comunes (devicePixelRatio 1) no cambia nada.
 const maxPR = Math.min(window.devicePixelRatio, 2);
+const minPR = Math.min(1, maxPR);
 let pr = maxPR, qAcc = 0, qFrames = 0;
 function adaptQuality(dt) {
   if (document.hidden) return;
@@ -578,8 +581,8 @@ function adaptQuality(dt) {
   const fps = qFrames / qAcc;
   qAcc = 0; qFrames = 0;
   let np = pr;
-  if (fps < 40) np = Math.max(0.6, pr - 0.2);
-  else if (fps > 57) np = Math.min(maxPR, pr + 0.1);
+  if (fps < 40) np = Math.max(minPR, pr - 0.2);
+  else if (fps > 50) np = Math.min(maxPR, pr + 0.1);
   if (Math.abs(np - pr) > 0.01) { pr = np; renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight); resizeComposer(); }
 }
 
