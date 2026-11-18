@@ -1,8 +1,8 @@
 // Escenas de las paradas nuevas: recepción del hall, mapa de seguridad
 // y la tragamonedas descompuesta con el técnico.
 import * as THREE from 'three';
-import { C, X, Z, toon, glow, rbox, box, cyl, sph, tor, plane, cone, add, canvasTex, txt, rr, dynamic, limb } from './util.js';
-import { makeStanding, makeBackpack, makeIdCard } from './characters.js';
+import { C, X, Z, toon, glow, rbox, box, cyl, sph, tor, plane, cone, add, canvasTex, redraw, txt, rr, dynamic, limb } from './util.js';
+import { makeStanding, makePatron, makeBackpack, makeIdCard } from './characters.js';
 import { BUILDING, HALL, NICHE, SLOTS, MEGA_SLOTS, ROULETTE, MAP_RECTS, DOME_CAMS, ATM_CAMS } from './layout.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -97,11 +97,20 @@ export function buildReception(root, R) {
   plane(root, 1.3, 0.3, glow('#e8e0d0', { map: lbl }), gx, gh + 0.4, zb + 0.02).castShadow = false;
 
   // ---------- seguridad: muro de monitores y escritorio ----------
-  const feeds = ['#5fe8a0', '#6fd0ff', '#5fe8a0', '#9fe0ff', '#5fe8a0', '#6fd0ff'];
   rbox(root, 2.3, 1.05, 0.08, 0.03, toon(C.ink), secC - 0.35, 1.85, zb + 0.05);
-  feeds.forEach((c, i) => {
-    const sx = secC - 0.35 + ((i % 3) - 1) * 0.74, sy = 1.6 + Math.floor(i / 3) * 0.48;
-    plane(root, 0.68, 0.42, glow(c), sx, sy, zb + 0.1).castShadow = false;
+  const feeds = [];
+  for (let i = 0; i < 6; i++) {
+    const sx = secC - 0.35 + ((i % 3) - 1) * 0.74, sy = 2.08 - Math.floor(i / 3) * 0.48;
+    const tex = cctvTex(i);
+    feeds.push(tex);
+    plane(root, 0.68, 0.42, glow('#ffffff', { map: tex }), sx, sy, zb + 0.1).castShadow = false;
+  }
+  // las cámaras se actualizan unas 4 veces por segundo (hora, gente, REC)
+  let feedT = 0;
+  R.updaters.push((t) => {
+    if (t - feedT < 0.25) return;
+    feedT = t;
+    for (const tex of feeds) redraw(tex, t);
   });
   rbox(root, 2.2, 0.78, 0.55, 0.04, wood, secC - 0.35, 0.39, zb + 0.3);
   rbox(root, 2.3, 0.05, 0.62, 0.02, toon('#efe3c8'), secC - 0.35, 0.8, zb + 0.32);
@@ -198,6 +207,224 @@ export function buildReception(root, R) {
   card3.position.set(0.3, 0.48, 0.22);
   card3.rotation.x = -0.4;
   v3.userData.upper.add(card3);
+}
+
+// =============================================================
+//  Imagen de cámara de seguridad para los monitores (canvas animado):
+//  escena simple en verde de visión nocturna, gente que camina, nombre de
+//  la cámara, hora que avanza, "REC" que titila, líneas de barrido.
+// =============================================================
+const CCTV = [
+  ['CAM 01', 'ENTRADA'], ['CAM 02', 'SALA A'], ['CAM 03', 'RULETA'],
+  ['CAM 04', 'CAJERO'], ['CAM 05', 'CAJA'], ['CAM 06', 'CALLE'],
+];
+function cctvTex(i) {
+  const [cam, name] = CCTV[i];
+  const dark = '#143826', mid = '#3f7a56', light = '#9fe0b6', hi = '#dcffe6';
+  const person = (ctx, x, y, s) => {
+    ctx.fillStyle = light;
+    ctx.beginPath(); ctx.arc(x, y - 30 * s, 6 * s, 0, Math.PI * 2); ctx.fill();
+    rr(ctx, x - 7 * s, y - 23 * s, 14 * s, 23 * s, 5 * s); ctx.fill();
+  };
+  return canvasTex(256, 160, (ctx, w, h, t = 0) => {
+    ctx.fillStyle = dark; ctx.fillRect(0, 0, w, h);
+    // piso en perspectiva con baldosas
+    ctx.fillStyle = '#1f4a33';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(w, h); ctx.lineTo(w * 0.72, h * 0.42); ctx.lineTo(w * 0.28, h * 0.42); ctx.fill();
+    ctx.strokeStyle = 'rgba(127,196,154,.18)'; ctx.lineWidth = 1;
+    for (let k = 0; k <= 8; k++) {
+      ctx.beginPath(); ctx.moveTo(w * 0.28 + (w * 0.44 * k) / 8, h * 0.42); ctx.lineTo((w * k) / 8, h); ctx.stroke();
+    }
+    for (let k = 1; k <= 5; k++) {
+      const y = h * 0.42 + (h * 0.58) * Math.pow(k / 5, 1.6);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    // objetos según la cámara
+    ctx.fillStyle = mid;
+    if (i === 0) { // puerta de vidrio y mostrador
+      ctx.strokeStyle = light; ctx.lineWidth = 3; ctx.strokeRect(w * 0.36, h * 0.12, w * 0.28, h * 0.32);
+      ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.12); ctx.lineTo(w * 0.5, h * 0.44); ctx.stroke();
+      ctx.fillStyle = mid; ctx.fillRect(w * 0.02, h * 0.5, w * 0.22, h * 0.16);
+    } else if (i === 1) { // fila de tragamonedas
+      for (let k = 0; k < 5; k++) {
+        const x = 18 + k * 46;
+        ctx.fillStyle = mid; rr(ctx, x, h * 0.18, 34, h * 0.36, 4); ctx.fill();
+        ctx.fillStyle = (Math.floor(t * 2) + k) % 3 ? '#5f9c78' : hi; ctx.fillRect(x + 6, h * 0.25, 22, 14);
+      }
+    } else if (i === 2) { // mesa de ruleta
+      ctx.beginPath(); ctx.ellipse(w * 0.5, h * 0.62, w * 0.3, h * 0.17, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = light; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(w * 0.5, h * 0.6, w * 0.13, h * 0.07, 0, 0, Math.PI * 2); ctx.stroke();
+      const a = t * 3;
+      ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.6); ctx.lineTo(w * 0.5 + Math.cos(a) * w * 0.13, h * 0.6 + Math.sin(a) * h * 0.07); ctx.stroke();
+    } else if (i === 3) { // cajero automático
+      rr(ctx, w * 0.4, h * 0.16, w * 0.2, h * 0.5, 4); ctx.fill();
+      ctx.fillStyle = hi; ctx.fillRect(w * 0.43, h * 0.22, w * 0.14, h * 0.1);
+      ctx.fillStyle = light; ctx.fillRect(w * 0.45, h * 0.4, w * 0.1, h * 0.03);
+    } else if (i === 4) { // caja con ventanilla
+      ctx.fillRect(w * 0.1, h * 0.36, w * 0.8, h * 0.18);
+      ctx.strokeStyle = light; ctx.lineWidth = 2;
+      for (let k = 0; k < 3; k++) ctx.strokeRect(w * (0.16 + k * 0.25), h * 0.14, w * 0.18, h * 0.2);
+    } else { // calle con palmera y auto que pasa
+      ctx.fillStyle = '#10241a'; ctx.fillRect(0, h * 0.42, w, h * 0.3);
+      ctx.fillStyle = light;
+      for (let k = 0; k < 6; k++) ctx.fillRect(((k * 50 + t * 10) % (w + 40)) - 20, h * 0.56, 22, 3);
+      ctx.fillStyle = mid; ctx.fillRect(w * 0.12, h * 0.1, 6, h * 0.35);
+      ctx.beginPath(); ctx.arc(w * 0.12 + 3, h * 0.12, 18, 0, Math.PI * 2); ctx.fill();
+      const cx = ((t * 40) % (w + 120)) - 60;
+      ctx.fillStyle = mid; rr(ctx, cx, h * 0.47, 54, 18, 6); ctx.fill();
+      ctx.fillStyle = hi; ctx.fillRect(cx + 50, h * 0.52, 5, 4);
+    }
+    // gente caminando
+    const n = i === 5 ? 1 : 2;
+    for (let k = 0; k < n; k++) {
+      const ph = i * 1.7 + k * 2.9;
+      const x = w * (0.5 + 0.38 * Math.sin(t * 0.25 + ph)), y = h * (0.78 + 0.12 * Math.sin(ph));
+      person(ctx, x, y, 0.9 + 0.3 * Math.sin(ph));
+    }
+    // ruido, líneas de barrido y viñeteado
+    for (let k = 0; k < 60; k++) {
+      ctx.fillStyle = `rgba(200,245,214,${Math.random() * 0.12})`;
+      ctx.fillRect(Math.random() * w, Math.random() * h, 2, 1);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    for (let y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
+    const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, w * 0.62);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    // textos
+    ctx.font = '22px "VT323", monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+    ctx.fillStyle = hi; ctx.fillText(`${cam}  ${name}`, 8, 6);
+    const s = 23 * 3600 + 41 * 60 + Math.floor(t);
+    const hh = String(Math.floor(s / 3600) % 24).padStart(2, '0'), mm = String(Math.floor(s / 60) % 60).padStart(2, '0'), ss = String(s % 60).padStart(2, '0');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`${hh}:${mm}:${ss}`, w - 8, h - 4);
+    if (Math.floor(t * 1.5) % 2 === 0) {
+      ctx.fillStyle = '#ff3b3b'; ctx.beginPath(); ctx.arc(w - 46, 16, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.textBaseline = 'top'; ctx.fillText('REC', w - 8, 6);
+    }
+  });
+}
+
+// =============================================================
+//  Joven en la ruleta con un cuaderno abierto (última parada).
+//  Las hojas muestran el texto de slides.js (notebook.left / right).
+//  Devuelve el centro y la normal de las hojas, para encuadrar la cámara.
+// =============================================================
+export function buildNotebookReader(root, R, rouletteCenter, content = {}) {
+  // banqueta del lado este de la ruleta: mira hacia el centro y, detrás,
+  // hacia el Pozo MEGA (el mismo sentido que la cámara de la parada 2)
+  const kid = makePatron({
+    type: 'youngM', body: '#2fb8c4', hair: '#3b2314', still: true,
+    handPos: [V(-0.17, 0.33, 0.42), V(0.17, 0.33, 0.42)], // sosteniéndolo desde abajo
+  });
+  kid.position.set(rouletteCenter.x + 4.45, 0.75, rouletteCenter.z);
+  kid.rotation.y = -Math.PI / 2; // mira al oeste
+  root.add(kid);
+  R.updaters.push(kid.userData.update);
+
+  // cuaderno abierto en las manos, inclinado hacia su cara
+  const W = 0.46, Hh = 0.29;
+  const nb = new THREE.Group();
+  nb.position.set(0, 0.47, 0.42);
+  nb.rotation.x = -0.45;
+  kid.add(nb);
+  rbox(nb, W + 0.02, 0.012, Hh + 0.02, 0.005, toon('#1f3a8a'), 0, -0.008, 0); // tapas
+  const tex = canvasTex(2048, 1290, (ctx, w, h) => drawNotebook(ctx, w, h, content));
+  // material sin luz: así no se tiñe con las luces de colores de la ruleta
+  const pages = plane(nb, W, Hh, glow('#ebe8e2', { map: tex }), 0, 0.002, 0);
+  pages.rotation.set(-Math.PI / 2, 0, Math.PI); // texto derecho visto desde el joven
+  pages.castShadow = false;
+  // espiral en el lomo
+  const wire = toon('#c9cfd8');
+  for (let z = -Hh / 2 + 0.015; z < Hh / 2 - 0.01; z += 0.018) tor(nb, 0.009, 0.0018, wire, 0, 0.004, z, Math.PI * 2, 10);
+  // lápiz apoyado en el borde de abajo de la hoja derecha
+  const pen = cyl(nb, 0.004, 0.004, 0.14, toon(C.yellow), -0.13, 0.008, -0.128, 8);
+  pen.rotation.set(0, 0.08, Math.PI / 2);
+
+  kid.updateMatrixWorld(true);
+  const center = nb.localToWorld(V(0, 0.002, 0));
+  const normal = V(0, 1, 0).applyQuaternion(nb.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  return { center, normal, tex };
+}
+
+// Dibuja las dos hojas: renglones azules, margen rojo, título subrayado y
+// el texto con letra manuscrita sobre los renglones. Si no entra, achica la letra.
+function drawNotebook(ctx, w, h, content) {
+  const half = w / 2;
+  const top = 150, bottom = h - 40;   // primer renglón y límite de abajo
+  const pad = 145, padR = 70;          // margen izquierdo (después de la línea roja) y derecho
+  const maxW = half - pad - padR;
+
+  // Arma los renglones de una hoja para un tamaño de letra (corta palabras)
+  const layout = (p, size) => {
+    ctx.font = `500 ${size}px "Caveat", cursive`;
+    const rows = [];
+    for (const raw of p?.lines || []) {
+      const bullet = raw.startsWith('- ');
+      const text = bullet ? raw.slice(2) : raw;
+      if (!text.trim()) { rows.push({ text: '', indent: 0 }); continue; }
+      const indent = bullet ? size * 0.8 : 0;
+      let line = '', first = true;
+      for (const word of text.split(/\s+/)) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxW - indent && line) {
+          rows.push({ text: line, indent, bullet: bullet && first });
+          first = false; line = word;
+        } else line = test;
+      }
+      rows.push({ text: line, indent, bullet: bullet && first });
+    }
+    return rows;
+  };
+  // El interlineado depende de la letra, y los renglones del cuaderno se
+  // dibujan con ese mismo interlineado: así cada línea de texto queda
+  // apoyada sobre su renglón. Se elige la letra más grande que entre.
+  let size = 60, lh, L, Rr;
+  for (; size >= 24; size -= 2) {
+    lh = Math.round(size * 1.12);
+    L = layout(content.left, size);
+    Rr = layout(content.right, size);
+    if (top + Math.max(L.length, Rr.length) * lh <= bottom) break;
+  }
+
+  ctx.fillStyle = '#fbf7ea'; ctx.fillRect(0, 0, w, h);
+  // sombra suave hacia el lomo
+  for (const [x0, dir] of [[half, -1], [half, 1]]) {
+    const g = ctx.createLinearGradient(x0, 0, x0 + dir * 90, 0);
+    g.addColorStop(0, 'rgba(120,100,60,.28)'); g.addColorStop(1, 'rgba(120,100,60,0)');
+    ctx.fillStyle = g; ctx.fillRect(Math.min(x0, x0 + dir * 90), 0, 90, h);
+  }
+  // renglones (el primero, en "top", es el del título)
+  ctx.strokeStyle = 'rgba(80,130,200,.35)'; ctx.lineWidth = 3;
+  for (let y = top; y < h - 20; y += lh) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(220,70,70,.45)'; ctx.lineWidth = 3;
+  for (const x of [120, half + 120]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  // agujeros del espiral
+  ctx.fillStyle = '#d9d2bd';
+  for (let y = 40; y < h; y += 72) for (const x of [half - 26, half + 26]) { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); }
+
+  const ink = '#1d2f7a';
+  const page = (p, rows, x0) => {
+    if (!p) return;
+    const left = x0 + pad;
+    ctx.fillStyle = ink; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    // título, apoyado sobre el primer renglón
+    ctx.font = `700 ${Math.round(size * 1.35)}px "Caveat", cursive`;
+    ctx.fillText(p.title || '', left, top - 8);
+    const tw = ctx.measureText(p.title || '').width;
+    ctx.strokeStyle = ink; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(left, top - 2); ctx.quadraticCurveTo(left + tw / 2, top + 4, left + tw, top - 4); ctx.stroke();
+    // cada línea de texto apoyada sobre el renglón siguiente
+    ctx.font = `500 ${size}px "Caveat", cursive`;
+    rows.forEach((r, i) => {
+      const y = top + lh * (i + 1) - Math.max(4, size * 0.1);
+      if (r.bullet) { ctx.beginPath(); ctx.arc(left + size * 0.25, y - size * 0.28, size * 0.11, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillText(r.text, left + r.indent, y);
+    });
+  };
+  page(content.left, L, 0);
+  page(content.right, Rr, half);
 }
 
 // =============================================================

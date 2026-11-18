@@ -67,6 +67,8 @@ try {
     document.fonts.load('60px "VT323"'),
     document.fonts.load('600 30px "Fredoka"'),
     document.fonts.load('700 30px "Fredoka"'),
+    document.fonts.load('500 40px "Caveat"'),
+    document.fonts.load('700 40px "Caveat"'),
   ]);
 } catch (e) { /* si falla, se usan fuentes del sistema */ }
 
@@ -80,6 +82,25 @@ VIEWS.moza = (() => {
   const f = worker.endFraming(2.7, 0.6, 1.6);
   return { pos: f.pos, target: f.target, fov: 46 };
 })();
+// cuaderno: la cámara se acerca hasta tener las hojas de frente
+const NB_VIA = [];
+if (world.notebook) {
+  const { center, normal } = world.notebook;
+  VIEWS.cuaderno = {
+    pos: center.clone().addScaledVector(normal, 0.38), target: center.clone(), fov: 50,
+    // en el viaje mira al chico y su cuaderno (así se los ve desde lejos) y al
+    // final se acerca hasta tener las hojas de frente
+    // spin -1: la media vuelta inicial se hace por el lado de la sala, no hacia la pared
+    via: { target: V(center.x + 0.15, center.y + 0.2, center.z), minDur: 6, turnAt: 0.55, spin: -1 },
+  };
+  // la cámara se para a unos 3 m a la izquierda del chico (un poco más alta), lo
+  // encuadra con el cuaderno y de ahí se acerca hasta las hojas
+  NB_VIA.push(
+    V(center.x + 0.7, 2.35, center.z + 2.9),
+    // a su izquierda, a la altura del cuaderno (por encima, la cabeza lo taparía)
+    V(center.x + 0.3, center.y + 0.6, center.z + 0.65),
+  );
+}
 const viewOf = (i) => VIEWS[SLIDES[i].id];
 // a partir de la parada de la moza, ella queda visible en la sala
 const MOZA = SLIDES.findIndex((s) => s.id === 'moza');
@@ -132,6 +153,9 @@ const EDGES = [
   ['v:moza', 'S2'], ['v:moza', 'S4'],
   ['v:tecnico', 'S1'], ['v:tecnico', 'S4'],
   ['v:cajero', 'D'], ['v:camaras', 'v:cajero'], ['v:camaras', 'D'],
+  // al cuaderno: desde las cámaras va recto hasta la izquierda del chico y baja
+  // a las hojas (de otras paradas entra por el este de la ruleta)
+  ['v:camaras', 'v:cuaderno', NB_VIA], ['RE', 'v:cuaderno', NB_VIA],
 ];
 let graph = null;
 function buildGraph() {
@@ -186,12 +210,15 @@ function flyTo(view, onDone, fromIdx, toIdx) {
   const curve = buildPath(cam.pos, fromIdx, toIdx);
   const len = curve.getLength();
   const m = {
-    curve, t: 0, dur: clamp(len / 7, 1.8, 6.5),
+    curve, t: 0, dur: Math.max(clamp(len / 7, 1.8, 6.5), view.via?.minDur || 0),
+    viaT: view.via?.target.clone(), turnAt: view.via?.turnAt ?? 0.7, spin: view.via?.spin ?? 0, startPos: cam.pos.clone(),
     fromT: cam.target.clone(), toT: view.target.clone(),
     fromFov: cam.fov, toFov: view.fov, onDone,
     // en los tramos cortos hacia atrás casi no se mira "hacia adelante":
     // la cámara gira directo desde una parada a la otra
-    aheadW: len < 8 ? 0 : toIdx < fromIdx && len < 25 ? 0.25 : 1,
+    // (con 'via' no: girar hacia adelante y después hacia la ruleta da casi media
+    // vuelta y por un instante la cámara mira al piso)
+    aheadW: view.via || len < 8 ? 0 : toIdx < fromIdx && len < 25 ? 0.25 : 1,
     toCover: toIdx === 0 && fromIdx !== 0,
   };
   if (m.toCover) {
@@ -240,7 +267,21 @@ function updateMove(dt) {
     // al principio mira hacia adelante; desde la mitad se va perfilando
     // hacia lo que se ve en la parada de destino
     if (m.ahead) base.lerp(m.ahead, smooth(0, 0.12, k) * m.aheadW);
-    base.lerp(m.toT, smooth(m.aheadW === 0 ? 0 : 0.35, 0.85, k));
+    if (m.viaT) {
+      // gira por ángulo (no en línea recta entre puntos): si hay que dar casi
+      // media vuelta, la mirada no pasa por al lado de la cámara
+      const d0 = tmpB.subVectors(m.fromT, m.startPos);
+      const yaw0 = Math.atan2(d0.x, d0.z), p0 = Math.atan2(d0.y, Math.hypot(d0.x, d0.z));
+      const d1 = tmpB.subVectors(m.viaT, cam.pos);
+      const yaw1 = Math.atan2(d1.x, d1.z), p1 = Math.atan2(d1.y, Math.hypot(d1.x, d1.z));
+      const sv = smooth(0.0, 0.4, k);
+      let dy = ((yaw1 - yaw0 + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+      if (m.spin < 0 && dy > 2.4) dy -= Math.PI * 2; // media vuelta por el lado pedido
+      if (m.spin > 0 && dy < -2.4) dy += Math.PI * 2;
+      const yaw = yaw0 + dy * sv, pitch = THREE.MathUtils.lerp(p0, p1, sv);
+      base.set(cam.pos.x + Math.sin(yaw) * Math.cos(pitch) * 6, cam.pos.y + Math.sin(pitch) * 6, cam.pos.z + Math.cos(yaw) * Math.cos(pitch) * 6);
+      base.lerp(m.toT, smooth(m.turnAt, 0.97, k));
+    } else base.lerp(m.toT, smooth(m.aheadW === 0 ? 0 : 0.35, 0.85, k));
   }
   cam.target.x = damp(cam.target.x, base.x, 8, dt);
   cam.target.y = damp(cam.target.y, base.y, 8, dt);
@@ -328,6 +369,7 @@ document.getElementById('brand').textContent = META.brand;
 
 function showPanel(i) {
   const s = SLIDES[i];
+  if (s.type === 'notebook') return; // el texto está en las hojas del cuaderno
   if (s.type === 'cover') {
     $('cover-kicker').textContent = s.kicker || '';
     $('cover-title').textContent = s.title || '';
@@ -374,6 +416,8 @@ function updateNavUI() {
   $('next').disabled = current === SLIDES.length - 1;
   minimap.setCurrent(current);
   history.replaceState(null, '', `#${current}`);
+  // en el cuaderno el minimapa taparía la hoja derecha
+  document.body.classList.toggle('on-notebook', SLIDES[current].type === 'notebook');
   if (current > 0) $('hint').classList.add('gone');
   remote?.broadcast();
 }
@@ -547,12 +591,14 @@ function tick() {
   parallax.x = damp(parallax.x, parallaxTarget.x, 3, dt);
   parallax.y = damp(parallax.y, parallaxTarget.y, 3, dt);
   camera.position.copy(cam.pos);
-  camera.position.y += Math.sin(t * 0.8) * 0.02;
+  // de muy cerca (el cuaderno) la respiración y el paralaje se achican
+  const near = clamp(cam.pos.distanceTo(cam.target) / 5, 0.04, 1);
+  camera.position.y += Math.sin(t * 0.8) * 0.02 * near;
   lookDir.subVectors(cam.target, cam.pos).normalize();
   const right = tmpA.set(-lookDir.z, 0, lookDir.x).normalize();
   const look = tmpB.copy(cam.target)
-    .addScaledVector(right, parallax.x * 0.35 + Math.sin(t * 0.5) * 0.03)
-    .add(new THREE.Vector3(0, parallax.y * 0.22, 0));
+    .addScaledVector(right, (parallax.x * 0.35 + Math.sin(t * 0.5) * 0.03) * near)
+    .add(new THREE.Vector3(0, parallax.y * 0.22 * near, 0));
   camera.lookAt(look);
   if (Math.abs(camera.fov - cam.fov) > 0.01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
 

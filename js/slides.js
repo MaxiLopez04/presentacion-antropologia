@@ -137,4 +137,38 @@ export const SLIDES = [
     ],
     tip: 'Tip: fijate cómo las cámaras te siguen.',
   },
+  {
+    // Última parada: la cámara vuelve a la ruleta y hace zoom al cuaderno de
+    // un joven sentado mirando hacia el Pozo MEGA. Lo que escribas acá
+    // aparece en las hojas, con letra manuscrita.
+    //  - Cada página tiene un título y una lista de renglones.
+    //  - Un renglón que empieza con '- ' se dibuja como viñeta.
+    //  - Un renglón vacío ('') deja un espacio.
+    //  - Los renglones largos se cortan solos; si no entra todo, la letra se achica.
+    id: 'cuaderno',
+    type: 'notebook',
+    kicker: 'PARADA 10',
+    title: 'Mis teorías',
+    notebook: {
+      left: {
+        title: 'Teorías',
+        lines: [
+          '- Teoría 1: escribí acá tu primera teoría.',
+          '- Teoría 2: otra idea para la exposición.',
+          '- Teoría 3: ...',
+          '',
+          'Texto de ejemplo: reemplazalo en js/slides.js',
+        ],
+      },
+      right: {
+        title: 'Conclusiones',
+        lines: [
+          '- Lo que vimos en el recorrido...',
+          '- Relación con las teorías...',
+          '',
+          '¿Preguntas?',
+        ],
+      },
+    },
+  },
 ];

@@ -9,7 +9,8 @@ import { makeSlot, updateSlots, spinSlot, makeRoulette, makePozo, makeVending, m
 import { makePatron, makeWorker, makeCrutchPlayer, makeHearts, makeStanding } from './characters.js';
 import { buildFacade, DOOR_HALF, XH } from './facade.js';
 import { buildCameras } from './security.js';
-import { buildReception, buildSecurityMap, buildRepair } from './scenes.js';
+import { buildReception, buildSecurityMap, buildRepair, buildNotebookReader } from './scenes.js';
+import { SLIDES } from './slides.js';
 
 const H = 5.5;          // altura del cielorraso
 const WALL_T = 0.3;
@@ -105,6 +106,8 @@ export function buildWorld(scene) {
   buildReception(root, R);
   buildSecurityMap(root);
   buildRepair(root, R, R.slots[8 + 23]); // tragamonedas descompuesta (fila junto a la escalera)
+  // joven con el cuaderno en la ruleta (última parada)
+  R.notebook = buildNotebookReader(root, R, roulette.position, SLIDES.find((s) => s.type === 'notebook')?.notebook);
 
   // ---- Moza ----
   const worker = makeWorker();

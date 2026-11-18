@@ -37,6 +37,9 @@ en ese caso compartí internet desde el celular a la notebook, o usá el teclado
 ## Editar el contenido
 
 - **Textos de las diapositivas y de la fachada (`facadeTop`, `facadeMain`):** `js/slides.js`
+- **Texto del cuaderno (última parada):** en `js/slides.js`, la parada `cuaderno` → `notebook.left` y
+  `notebook.right` (título y renglones de cada hoja; `- ` al principio hace una viñeta, `''` deja un renglón vacío).
+  Si el texto no entra, la letra se achica sola.
 - **Posición de la cámara en cada parada:** `VIEWS` en `js/main.js`
 - **Ubicación de máquinas y objetos (en px del croquis):** `js/layout.js`
 - **Colores / estilo de la interfaz:** `css/style.css`

@@ -67,6 +67,7 @@ export const MARKERS = [
   { slide: 7, x: 690, y: 398 },
   { slide: 8, x: 838, y: 462 },
   { slide: 9, x: 905, y: 512 },
+  { slide: 10, x: 962, y: 326 },
 ];
 
 // Recorrido de la moza (flecha roja punteada)

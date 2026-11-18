@@ -294,6 +294,7 @@ html, body {
 
 body.ui-hidden #panel, body.ui-hidden #nav, body.ui-hidden #topbar,
 body.ui-hidden #minimap, body.ui-hidden #hint, body.ui-hidden #cover { opacity: 0 !important; pointer-events: none !important; }
+body.on-notebook #minimap { opacity: 0 !important; pointer-events: none !important; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {

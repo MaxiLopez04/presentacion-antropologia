@@ -23,7 +23,12 @@ export function buildFacade(root, R) {
 
   // ---------- bloques macizos entre la fachada y la pared ----------
   const solids = [[Z0, -BAY[1]], [-BAY[0], -DOOR_HALF], [DOOR_HALF, BAY[0]], [BAY[1], Z1]];
-  for (const [a, b] of solids) box(root, depth, H + 0.3, b - a, sand, FX + depth / 2, (H + 0.3) / 2, (a + b) / 2);
+  // (2 cm más cortos hacia la puerta y los arcos: si no, sus costados quedan en
+  // el mismo plano que la pared del hall y el zócalo del frente, y titilan)
+  for (const [a, b] of solids) {
+    const a2 = a === Z0 ? a : a + 0.02, b2 = b === Z1 ? b : b - 0.02;
+    box(root, depth, H + 0.3, b2 - a2, sand, FX + depth / 2, (H + 0.3) / 2, (a2 + b2) / 2);
+  }
   // losa sobre pórtico y arcos
   box(root, depth, 0.4, Z1 - Z0, sandD, FX + depth / 2, H + 0.1, 0);
   // piso del pórtico
