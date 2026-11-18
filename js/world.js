@@ -107,7 +107,7 @@ export function buildWorld(scene) {
   buildSecurityMap(root);
   buildRepair(root, R, R.slots[8 + 23]); // tragamonedas descompuesta (fila junto a la escalera)
   // joven con el cuaderno en la ruleta (última parada)
-  R.notebook = buildNotebookReader(root, R, roulette.position, SLIDES.find((s) => s.type === 'notebook')?.notebook);
+  R.notebook = buildNotebookReader(root, R, roulette.position, SLIDES.filter((s) => s.type === 'notebook').map((s) => s.notebook || {}));
 
   // ---- Moza ----
   const worker = makeWorker();

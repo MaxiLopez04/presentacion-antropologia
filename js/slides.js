@@ -143,13 +143,15 @@ export const SLIDES = [
     tip: '',
   },
   {
-    // Última parada: la cámara vuelve a la ruleta y hace zoom al cuaderno de
+    // Últimas paradas: la cámara vuelve a la ruleta y hace zoom al cuaderno de
     // un joven sentado mirando hacia el Pozo MEGA. Lo que escribas acá
-    // aparece en las hojas, con letra manuscrita.
+    // aparece en las hojas, con letra manuscrita. Cada parada de tipo
+    // 'notebook' es una doble página: al pasar de una a otra el joven da vuelta la hoja.
     //  - Cada página tiene un título y una lista de renglones.
     //  - Un renglón que empieza con '- ' se dibuja como viñeta.
     //  - Un renglón vacío ('') deja un espacio.
-    //  - Los renglones largos se cortan solos; si no entra todo, la letra se achica.
+    //  - Los renglones largos se cortan solos; si no entra todo, la letra se
+    //    achica (en todas las dobles páginas por igual). Entran 16 renglones.
     id: 'cuaderno',
     type: 'notebook',
     kicker: 'PARADA 10',
@@ -158,21 +160,45 @@ export const SLIDES = [
       left: {
         title: 'Observación → Teoría',
         lines: [
-          '1. Café y comida en el asiento, trato amable, sin relojes ni ventanas → Polanyi: la economía está incrustada en relaciones sociales.',
+          '1. Comida y café sin cargo en el asiento, trato amable, sin relojes ni ventanas, cajero que devuelve el cambio en tickets → Polanyi: la economía está incrustada en relaciones sociales.',
           '',
-          '2. Adultos mayores que apuestan entre $40.000 y $100.000 → Robbins lo vería como irracional; para Herskovits es racional dentro de su matriz cultural.',
-          '',
-          '3. Rascar el vidrio, golpear los botones y mostrar los billetes → Mauss: la ofrenda y el potlatch.',
+          '2. Adultos mayores que apuestan entre $40.000 y $100.000 → Robbins: conducta irracional. Herskovits: es racional dentro de su matriz cultural.',
         ],
       },
       right: {
         title: 'Preguntas',
         lines: [
-          '1. ¿El casino arma hospitalidad y un tiempo propio para que la plata siga circulando?',
+          '1a. ¿Cómo recrea el casino hospitalidad y un tiempo propio para que el dinero siga circulando?',
           '',
-          '2. ¿Qué buscan los adultos mayores además de ganar: compañía, buen trato, un lugar fresco y seguro?',
+          '1b. ¿La falta de relojes y la atención en el asiento hacen que una transacción desigual se viva como un espacio de pertenencia y cuidado?',
           '',
-          '3. ¿Son microrrituales para atraer la suerte o una forma de buscar prestigio frente a los demás?',
+          '2a. ¿Cómo permite la matriz cultural de Herskovits entender como racional apostar la jubilación o los ahorros?',
+          '',
+          '2b. ¿Qué necesidades no monetarias buscan los adultos mayores: compañía, un lugar fresco y seguro, el buen trato?',
+        ],
+      },
+    },
+  },
+  {
+    id: 'cuaderno2',
+    type: 'notebook',
+    kicker: 'PARADA 11',
+    title: 'Mis teorías (2)',
+    notebook: {
+      left: {
+        title: 'Observación → Teoría',
+        lines: [
+          '3. Rascar el vidrio y golpear los botones, aunque no cambian el resultado → Mauss: la ofrenda a los dioses, «dar una cosa pequeña por una grande».',
+          '',
+          '4. Comida, bebida y trato amable sin cargo → Mauss: el don y las tres obligaciones (dar, recibir y devolver).',
+        ],
+      },
+      right: {
+        title: 'Preguntas',
+        lines: [
+          '3. ¿Los gestos son rituales en los que el dinero es una ofrenda a «la suerte», o cálculo racional aunque el gesto no cambie nada?',
+          '',
+          '4. ¿Los obsequios y el trato funcionan como un don que obliga a «devolver» quedándose a jugar?',
         ],
       },
     },

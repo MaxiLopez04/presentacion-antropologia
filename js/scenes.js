@@ -311,7 +311,12 @@ function cctvTex(i) {
 //  Las hojas muestran el texto de slides.js (notebook.left / right).
 //  Devuelve el centro y la normal de las hojas, para encuadrar la cámara.
 // =============================================================
-export function buildNotebookReader(root, R, rouletteCenter, content = {}) {
+// `spreads` es la lista de dobles páginas (una por cada parada 'notebook').
+// Devuelve además show(k) / flip(k, onDone) para cambiar de doble página: flip
+// anima al joven dando vuelta la hoja (hacia adelante o hacia atrás).
+const NB_W = 2048, NB_H = 1290, NB_GAP = 70;
+export function buildNotebookReader(root, R, rouletteCenter, spreads = []) {
+  if (!spreads.length) spreads = [{}];
   // banqueta del lado este de la ruleta: mira hacia el centro y, detrás,
   // hacia el Pozo MEGA (el mismo sentido que la cámara de la parada 2)
   const kid = makePatron({
@@ -321,7 +326,8 @@ export function buildNotebookReader(root, R, rouletteCenter, content = {}) {
   kid.position.set(rouletteCenter.x + 4.45, 0.75, rouletteCenter.z);
   kid.rotation.y = -Math.PI / 2; // mira al oeste
   root.add(kid);
-  R.updaters.push(kid.userData.update);
+  const hands = kid.userData.hands;
+  const handRest = hands.map((h) => h.position.clone());
 
   // cuaderno abierto en las manos, inclinado hacia su cara
   const W = 0.46, Hh = 0.29;
@@ -330,27 +336,108 @@ export function buildNotebookReader(root, R, rouletteCenter, content = {}) {
   nb.rotation.x = -0.45;
   kid.add(nb);
   rbox(nb, W + 0.02, 0.012, Hh + 0.02, 0.005, toon('#1f3a8a'), 0, -0.008, 0); // tapas
-  const tex = canvasTex(2048, 1290, (ctx, w, h) => drawNotebook(ctx, w, h, content));
+
+  // una textura por doble página, todas con el mismo tamaño de letra (el de la
+  // que necesite la letra más chica)
+  const sizes = [];
+  const texes = spreads.map((c, i) => canvasTex(NB_W, NB_H, (ctx, w, h, max = 60) => { sizes[i] = drawNotebook(ctx, w, h, c, max); }));
+  const shared = Math.min(...sizes);
+  texes.forEach((t, i) => { if (sizes[i] > shared) redraw(t, shared); });
+  // recortes de cada textura: media hoja (base) y hoja sin el hueco del lomo (la que gira)
+  const crop = (tex, x0, x1) => {
+    const t = tex.clone();
+    t.repeat.set((x1 - x0) / NB_W, 1); t.offset.set(x0 / NB_W, 0); t.needsUpdate = true;
+    return t;
+  };
+  const g0 = NB_W / 2 - NB_GAP / 2, g1 = NB_W / 2 + NB_GAP / 2;
+  const half = texes.map((t) => ({
+    L: crop(t, 0, NB_W / 2), R: crop(t, NB_W / 2, NB_W), // mitades completas
+    Lc: crop(t, 0, g0), Rc: crop(t, g1, NB_W),           // hojas sin el hueco
+  }));
+
+  // las hojas (en el plano de la textura: x a la derecha, y hacia arriba, normal hacia el lector)
+  const sheet = new THREE.Group();
+  sheet.position.set(0, 0.002, 0);
+  sheet.rotation.set(-Math.PI / 2, 0, Math.PI); // texto derecho visto desde el joven
+  nb.add(sheet);
   // material sin luz: así no se tiñe con las luces de colores de la ruleta
-  const pages = plane(nb, W, Hh, glow('#ebe8e2', { map: tex }), 0, 0.002, 0);
-  pages.rotation.set(-Math.PI / 2, 0, Math.PI); // texto derecho visto desde el joven
-  pages.castShadow = false;
+  const mat = (map) => glow('#ebe8e2', { map, unique: true });
+  const baseL = plane(sheet, W / 2, Hh, mat(half[0].L), -W / 4, 0, 0);
+  const baseR = plane(sheet, W / 2, Hh, mat(half[0].R), W / 4, 0, 0);
+  // hoja que gira: bisagra en el lomo; adelante la hoja derecha de la doble
+  // página anterior, atrás la izquierda de la siguiente
+  const x0 = W * (NB_GAP / 2) / NB_W, pw = W * (NB_W - g1) / NB_W;
+  const hinge = new THREE.Group();
+  sheet.add(hinge);
+  const front = plane(hinge, pw, Hh, mat(half[0].Rc), x0 + pw / 2, 0, 0.0015);
+  const back = plane(hinge, pw, Hh, mat(half[0].Lc), x0 + pw / 2, 0, -0.0015);
+  back.rotation.y = Math.PI;
+  for (const m of [baseL, baseR, front, back]) m.castShadow = false;
+  hinge.visible = false;
+  // punto de la esquina de abajo de la hoja que gira, de donde la agarra el joven
+  const corner = new THREE.Object3D();
+  // (desde afuera del borde y por debajo, para que la mano no tape la hoja)
+  corner.position.set(x0 + pw + 0.03, -Hh / 2 + 0.02, -0.03);
+  hinge.add(corner);
+
+  let cur = 0, anim = null;
+  const show = (k) => {
+    anim = null; cur = k;
+    baseL.material.map = half[k].L; baseR.material.map = half[k].R;
+    hinge.visible = false;
+    hands.forEach((h, i) => h.position.copy(handRest[i]));
+  };
+  const flip = (k, onDone) => {
+    if (anim) { const a = anim; show(a.to); a.onDone?.(); }
+    if (k === cur) { onDone?.(); return; }
+    if (Math.abs(k - cur) !== 1) { show(k); onDone?.(); return; }
+    const a = Math.min(k, cur), b = Math.max(k, cur), fwd = k > cur;
+    baseL.material.map = half[a].L; baseR.material.map = half[b].R;
+    front.material.map = half[a].Rc; back.material.map = half[b].Lc;
+    hinge.rotation.y = fwd ? 0 : -Math.PI;
+    hinge.visible = true;
+    // mano que da vuelta la hoja: la más cercana a la esquina al empezar
+    kid.updateMatrixWorld(true);
+    const c0 = kid.worldToLocal(corner.getWorldPosition(new THREE.Vector3()));
+    const hi = c0.distanceTo(handRest[0]) < c0.distanceTo(handRest[1]) ? 0 : 1;
+    anim = { to: k, fwd, t: 0, dur: 1.7, hi, onDone };
+  };
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const tmp = new THREE.Vector3();
+  R.updaters.push((t, dt) => {
+    if (!anim) return;
+    anim.t += dt;
+    const u = Math.min(1, anim.t / anim.dur);
+    // la mano va a la esquina, la levanta y la suelta (la hoja sigue sola) y
+    // vuelve a su lugar; si la acompañara hasta arriba taparía la cámara
+    const p = sm(0.15, 0.85, u);
+    hinge.rotation.y = -Math.PI * (anim.fwd ? p : 1 - p);
+    kid.updateMatrixWorld(true);
+    kid.worldToLocal(corner.getWorldPosition(tmp));
+    const wgt = sm(0, 0.16, u) * (1 - sm(0.3, 0.55, u));
+    hands[anim.hi].position.lerpVectors(handRest[anim.hi], tmp, wgt);
+    if (u >= 1) { const a = anim; show(a.to); a.onDone?.(); }
+  });
+  // después de mover la mano, así el brazo la sigue en el mismo cuadro
+  R.updaters.push(kid.userData.update);
   // espiral en el lomo
   const wire = toon('#c9cfd8');
   for (let z = -Hh / 2 + 0.015; z < Hh / 2 - 0.01; z += 0.018) tor(nb, 0.009, 0.0018, wire, 0, 0.004, z, Math.PI * 2, 10);
   // lápiz apoyado en el borde de abajo de la hoja derecha
-  const pen = cyl(nb, 0.004, 0.004, 0.14, toon(C.yellow), -0.13, 0.008, -0.128, 8);
+  // (sobre el borde de la tapa, para no tapar el último renglón)
+  const pen = cyl(nb, 0.004, 0.004, 0.14, toon(C.yellow), -0.13, 0.006, -Hh / 2 - 0.006, 8);
   pen.rotation.set(0, 0.08, Math.PI / 2);
 
   kid.updateMatrixWorld(true);
   const center = nb.localToWorld(V(0, 0.002, 0));
   const normal = V(0, 1, 0).applyQuaternion(nb.getWorldQuaternion(new THREE.Quaternion())).normalize();
-  return { center, normal, tex };
+  return { center, normal, show, flip };
 }
 
 // Dibuja las dos hojas: renglones azules, margen rojo, título subrayado y
 // el texto con letra manuscrita sobre los renglones. Si no entra, achica la letra.
-function drawNotebook(ctx, w, h, content) {
+// Devuelve el tamaño de letra usado (como mucho `maxSize`).
+function drawNotebook(ctx, w, h, content, maxSize = 60) {
   const half = w / 2;
   const top = 150, bottom = h - 40;   // primer renglón y límite de abajo
   const pad = 145, padR = 70;          // margen izquierdo (después de la línea roja) y derecho
@@ -380,7 +467,7 @@ function drawNotebook(ctx, w, h, content) {
   // El interlineado depende de la letra, y los renglones del cuaderno se
   // dibujan con ese mismo interlineado: así cada línea de texto queda
   // apoyada sobre su renglón. Se elige la letra más grande que entre.
-  let size = 60, lh, L, Rr;
+  let size = maxSize, lh, L, Rr;
   for (; size >= 24; size -= 2) {
     lh = Math.round(size * 1.12);
     L = layout(content.left, size);
@@ -389,7 +476,7 @@ function drawNotebook(ctx, w, h, content) {
   }
 
   // dos hojas separadas: en el medio queda el hueco del espiral, donde se ve la tapa
-  const gap = 70, g0 = half - gap / 2, g1 = half + gap / 2;
+  const gap = NB_GAP, g0 = half - gap / 2, g1 = half + gap / 2;
   ctx.fillStyle = '#1f3a8a'; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = '#fbf7ea'; ctx.fillRect(0, 0, g0, h); ctx.fillRect(g1, 0, w - g1, h);
   // sombra suave hacia el lomo
@@ -428,6 +515,7 @@ function drawNotebook(ctx, w, h, content) {
   };
   page(content.left, L, 0);
   page(content.right, Rr, half);
+  return size;
 }
 
 // =============================================================

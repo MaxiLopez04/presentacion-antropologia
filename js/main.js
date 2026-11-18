@@ -101,6 +101,11 @@ if (world.notebook) {
     V(center.x + 0.3, center.y + 0.6, center.z + 0.65),
   );
 }
+// las demás dobles páginas del cuaderno se ven desde el mismo lugar
+const isNB = (i) => SLIDES[i].type === 'notebook';
+const NB_EXTRA = SLIDES.filter((s) => s.type === 'notebook' && s.id !== 'cuaderno').map((s) => s.id);
+if (VIEWS.cuaderno) for (const id of NB_EXTRA) VIEWS[id] = VIEWS.cuaderno;
+const spreadOf = (i) => SLIDES.slice(0, i).filter((s) => s.type === 'notebook').length;
 const viewOf = (i) => VIEWS[SLIDES[i].id];
 // a partir de la parada de la moza, ella queda visible en la sala
 const MOZA = SLIDES.findIndex((s) => s.id === 'moza');
@@ -156,6 +161,7 @@ const EDGES = [
   // al cuaderno: desde las cámaras va recto hasta la izquierda del chico y baja
   // a las hojas (de otras paradas entra por el este de la ruleta)
   ['v:camaras', 'v:cuaderno', NB_VIA], ['RE', 'v:cuaderno', NB_VIA],
+  ...NB_EXTRA.map((id) => ['v:cuaderno', 'v:' + id]),
 ];
 let graph = null;
 function buildGraph() {
@@ -348,6 +354,9 @@ function go(i) {
   if (i > 0) world.doors.target = 1;
   if (SLIDES[from].id === 'expendedora' && SLIDES[i].id === 'moza') { startCinematic(); return; }
   if (i >= MOZA && !worker.root.visible) worker.placeAtEnd();
+  // entre dobles páginas del cuaderno la cámara no se mueve: el joven da vuelta la hoja
+  if (isNB(from) && isNB(i) && cam.pos.distanceTo(viewOf(i).pos) < 0.05) { world.notebook.flip(spreadOf(i), () => arrive(i)); return; }
+  if (isNB(i)) world.notebook?.show(spreadOf(i));
   flyTo(viewOf(i), () => arrive(i), from, i);
 }
 
@@ -640,6 +649,7 @@ current = startAt;
 if (startAt >= MOZA) worker.placeAtEnd();
 world.doors.target = world.doors.open = startAt > 0 ? 1 : 0;
 setCam(viewOf(startAt));
+if (isNB(startAt)) world.notebook?.show(spreadOf(startAt));
 updateNavUI();
 tick();
 setTimeout(() => {
