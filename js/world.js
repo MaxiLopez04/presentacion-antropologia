@@ -4,7 +4,7 @@ import {
   C, X, Z, P, deg, toon, glow, rbox, box, cyl, sph, tor, cap, plane, cone, add, canvasTex, redraw, txt, rr,
   dynamic, bakeStatic, rand,
 } from './util.js';
-import { SLOTS, MEGA_SLOTS, ROULETTE, WORKER_PATH, HALL } from './layout.js';
+import { SLOTS, MEGA_SLOTS, ROULETTE, WORKER_PATH, HALL, NICHE } from './layout.js';
 import { makeSlot, updateSlots, spinSlot, makeRoulette, makePozo, makeVending, makeCashStation } from './props.js';
 import { makePatron, makeWorker, makeCrutchPlayer, makeHearts, makeStanding } from './characters.js';
 import { buildFacade, DOOR_HALF, XH } from './facade.js';
@@ -32,7 +32,6 @@ export function buildWorld(scene) {
   floorAndCeiling(root, R);
   walls(root);
   buildFacade(root, R);
-  guardBooth(root, R);
   const staffDoor = staffRoom(root);
   escalators(root, R);
   stairs(root);
@@ -333,10 +332,17 @@ function walls(root) {
   seg(XL - WALL_T / 2, ZT, XR + WALL_T / 2, ZT);
   seg(XL - WALL_T / 2, ZB, XR + WALL_T / 2, ZB);
   seg(XR, ZT, XR, ZB);
-  seg(XL, ZT, XL, HZ1);
   seg(XL, HZ2, XL, ZB);
   // hall ampliado hacia la calle: paredes laterales y nueva pared de entrada
-  seg(XH - WALL_T / 2, HZ1, XL, HZ1);
+  // pared norte con la abertura del nicho de la recepción (scenes.js)
+  seg(XH - WALL_T / 2, HZ1, X(NICHE.x1), HZ1);
+  seg(X(NICHE.x1), HZ1, X(NICHE.counterEnd), HZ1, NICHE.height, H);
+  seg(X(NICHE.counterEnd), HZ1, X(NICHE.x2) + WALL_T / 2, HZ1);
+  // cara este del bloque (dentro del casino) con la puerta del personal
+  const ex = X(NICHE.x2), dzc = HZ1 - NICHE.depth / 2;
+  seg(ex, ZT, ex, dzc - 0.55);
+  seg(ex, dzc + 0.55, ex, HZ1);
+  seg(ex, dzc - 0.55, ex, dzc + 0.55, 2.3, H);
   seg(XH - WALL_T / 2, HZ2, XL, HZ2);
   seg(XH, HZ1, XH, -DOOR_HALF);
   seg(XH, DOOR_HALF, XH, HZ2);
@@ -348,7 +354,7 @@ function walls(root) {
     const m = box(root, lx, 0.07, lz, glow('#38b8ff'), (x1 + x2) / 2, 4.55, (z1 + z2) / 2);
     m.castShadow = false;
   };
-  neon(XL + 0.5, ZT + 0.2, X(350), ZT + 0.2);
+  neon(X(NICHE.x2) + 0.4, ZT + 0.2, X(350), ZT + 0.2);
   neon(X(710), ZT + 0.2, XR - 0.5, ZT + 0.2);
   neon(XL + 0.5, ZB - 0.2, X(380), ZB - 0.2);
   neon(X(700), ZB - 0.2, X(1040), ZB - 0.2);
@@ -357,39 +363,6 @@ function walls(root) {
 
 
 // =============================================================
-
-// =============================================================
-
-// =============================================================
-function guardBooth(root, R) {
-  const x1 = X(52), x2 = X(142), z1 = Z(127), z2 = Z(209);
-  const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, w = x2 - x1, d = z2 - z1;
-  rbox(root, w, 1.1, d, 0.08, toon('#2346a8'), cx, 0.55, cz);
-  rbox(root, w + 0.1, 0.1, d + 0.1, 0.04, toon(C.gold), cx, 1.12, cz);
-  const glass = rbox(root, w - 0.1, 1.3, d - 0.1, 0.04, toon('#c9f0ff', { opacity: 0.25 }), cx, 1.8, cz);
-  glass.castShadow = false;
-  for (const [x, z] of [[x1 + 0.05, z1 + 0.05], [x2 - 0.05, z1 + 0.05], [x1 + 0.05, z2 - 0.05], [x2 - 0.05, z2 - 0.05]]) {
-    box(root, 0.12, 1.4, 0.12, toon('#4aa3d8'), x, 1.8, z);
-  }
-  rbox(root, w + 0.3, 0.25, d + 0.3, 0.08, toon(C.red), cx, 2.58, cz);
-  const tex = canvasTex(512, 128, (ctx, w2, h2) => {
-    ctx.fillStyle = C.yellow; ctx.fillRect(0, 0, w2, h2);
-    txt(ctx, 'SEGURIDAD', w2 / 2, h2 / 2 + 4, { size: 72, fill: C.ink, lw: 0 });
-  });
-  rbox(root, 2.8, 0.6, 0.16, 0.06, toon(C.ink), cx, 3.05, z2 - 0.2);
-  plane(root, 2.6, 0.5, glow('#ffffff', { map: tex }), cx, 3.05, z2 - 0.11).castShadow = false;
-  // escritorio + monitores
-  rbox(root, 2.2, 0.08, 0.8, 0.03, toon(C.wood), cx + 0.6, 1.15, cz + 0.9);
-  for (const dx of [0.1, 1.0]) {
-    rbox(root, 0.6, 0.42, 0.06, 0.03, toon(C.ink), cx + dx, 1.45, cz + 1.0);
-    plane(root, 0.52, 0.34, glow('#5fe8a0'), cx + dx, 1.45, cz + 1.035).castShadow = false;
-  }
-  const guard = makePatron({ body: '#1f2a5a', hat: '#1f2a5a' });
-  guard.position.set(cx + 0.55, 0.55, cz + 0.2);
-  root.add(guard);
-  R.updaters.push(guard.userData.update);
-}
-
 function staffRoom(root) {
   const x1 = X(52), x2 = X(122), z1 = Z(437), z2 = Z(528) - 0.1;
   const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;

@@ -12,6 +12,12 @@ export const BUILDING = { x1: 45, y1: 120, x2: 1145, y2: 528 };
 // va desde la nueva pared de entrada (x1) hasta la pared vieja del
 // edificio (BUILDING.x1), entre y1 e y2. La fachada se corre con él.
 export const HALL = { x1: -55, y1: 210, y2: 440 };
+// Recepción + seguridad: un solo bloque empotrado en la pared norte del hall
+// (px en x, metros en profundidad/altura). La barra va de x1 a counterEnd
+// (la línea de vidrio) y está cerrada; split separa recepción de seguridad.
+// De counterEnd a x2 hay un pasillo interno con la puerta del personal,
+// que se abre del lado del casino (cara este, en x2).
+export const NICHE = { x1: -48, split: 45, counterEnd: 118, x2: 142, depth: 2.1, height: 3.2 };
 
 // [x, y, yaw, skin]
 export const SLOTS = [
@@ -78,7 +84,7 @@ export const ATM_CAMS = [850, 882, 914];
 
 // Elementos para dibujar el minimapa [x1, y1, x2, y2]
 export const MAP_RECTS = {
-  guard: [52, 127, 142, 209],
+  guard: [45, 168, 142, 210],
   staff: [52, 437, 122, 520],
   escalatorTop: [357, 128, 702, 170],
   escalatorBottom: [357, 175, 702, 217],

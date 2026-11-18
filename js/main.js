@@ -23,7 +23,7 @@ const DOOR_LANE = 0;
 // pos = dónde está la cámara, target = hacia dónde mira (metros)
 const VIEWS = {
   portada: { pos: V(FX - 19, 1.9, DOOR_MID), target: V(FX, 7.6, DOOR_MID), fov: 55 },
-  hall: { pos: V(-28.9, 2.3, 1.9), target: V(-29.9, 1.5, -4.4), fov: 54 },
+  hall: { pos: V(-24.6, 2.4, 3.9), target: V(-27.6, 1.5, -5.6), fov: 64 },
   ruleta: { pos: V(18.6, 3.9, -5.2), target: V(6.5, 0.6, -0.6), fov: 55 },
   mapa: { pos: V(18.3, 1.8, 6.1), target: V(18.55, 2.15, 10.0), fov: 50 },
   pozo: { pos: V(4.6, 2.6, 3.7), target: V(-2.6, 1.6, -1.4), fov: 55 },

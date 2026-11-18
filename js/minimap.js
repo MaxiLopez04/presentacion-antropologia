@@ -1,5 +1,5 @@
 // Minimapa dibujado a partir del croquis (coordenadas en px)
-import { BUILDING, HALL, SLOTS, MEGA_SLOTS, ROULETTE, MARKERS, MAP_RECTS, WORKER_PATH, DOME_CAMS, ATM_CAMS } from './layout.js';
+import { BUILDING, HALL, NICHE, SLOTS, MEGA_SLOTS, ROULETTE, MARKERS, MAP_RECTS, WORKER_PATH, DOME_CAMS, ATM_CAMS } from './layout.js';
 import { toPx } from './util.js';
 
 export function createMinimap(canvas, onMarker) {
@@ -33,7 +33,8 @@ export function createMinimap(canvas, onMarker) {
     ctx.fillStyle = '#5fd0f0';
     ctx.fillRect(tx(HALL.x1) - 2, ty(272), 4, (376 - 272) * s);
     // bloques
-    rect(MAP_RECTS.guard, '#2346a8');
+    // recepción + seguridad (un solo bloque)
+    rect([NICHE.x1, HALL.y1 - NICHE.depth * 20, NICHE.x2, HALL.y1 + 1], '#d9b98c');
     rect(MAP_RECTS.staff, '#ff9f43');
     rect(MAP_RECTS.escalatorTop, '#a9b5c9');
     rect(MAP_RECTS.escalatorBottom, '#a9b5c9');

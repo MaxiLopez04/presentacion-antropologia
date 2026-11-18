@@ -3,38 +3,136 @@
 import * as THREE from 'three';
 import { C, X, Z, toon, glow, rbox, box, cyl, sph, tor, plane, cone, add, canvasTex, txt, rr, dynamic, limb } from './util.js';
 import { makeStanding, makeBackpack, makeIdCard } from './characters.js';
-import { BUILDING, HALL, SLOTS, MEGA_SLOTS, ROULETTE, MAP_RECTS, DOME_CAMS, ATM_CAMS } from './layout.js';
+import { BUILDING, HALL, NICHE, SLOTS, MEGA_SLOTS, ROULETTE, MAP_RECTS, DOME_CAMS, ATM_CAMS } from './layout.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const ZB = Z(528) - 0.15; // cara interna de la pared sur
 
 // =============================================================
-//  Hall: recepcionista de traje, guardarropa y gente dejando
-//  la mochila / mostrando el DNI (en la pared izquierda al entrar)
+//  Hall: recepción + seguridad empotradas en la pared izquierda, con
+//  guardarropa y gente dejando la mochila / mostrando el DNI
 // =============================================================
 export function buildReception(root, R) {
-  // Mostrador contra la pared izquierda (norte) del hall ampliado, mirando
-  // hacia el centro (sur). Todo lo de la recepción va en un grupo: +z local
-  // es hacia el centro del hall y x local corre a lo largo de la pared.
+  // Recepción y seguridad en un solo bloque empotrado en la pared norte del
+  // hall (izquierda al entrar): revestimiento de madera, techo bajo con LED,
+  // barra cerrada de punta a punta. El personal entra por un pasillo interno
+  // con puerta del lado del casino (cara este del bloque).
+  const nx1 = X(NICHE.x1), nsp = X(NICHE.split), nce = X(NICHE.counterEnd), nx2 = X(NICHE.x2) - 0.15;
+  const nw = nx2 - nx1, cx = (nx1 + nx2) / 2;
+  const zf = Z(HALL.y1);              // plano de la pared (abertura)
+  const zb = zf - NICHE.depth;        // fondo del bloque
+  const ah = NICHE.height;
+  const zm = (zf + zb) / 2;
+  const recC = (nx1 + nsp) / 2, secC = (nsp + nce) / 2;
+  const wood = toon('#b9824f'), woodL = toon('#d9b98c'), woodD = toon('#8a5a34');
+  box(root, nw, 0.03, NICHE.depth, toon('#d8cbb4'), cx, 0.0, zm).castShadow = false;   // piso
+  box(root, nw + 0.2, 0.2, NICHE.depth + 0.15, wood, cx, -0.1, zm).castShadow = false; // base
+  box(root, nw + 0.2, ah, 0.2, wood, cx, ah / 2, zb - 0.1);                              // fondo
+  box(root, 0.2, ah, NICHE.depth, wood, nx1 - 0.1, ah / 2, zm);                          // costado oeste
+  box(root, nw + 0.2, 0.14, NICHE.depth, toon('#f2ebe0'), cx, ah + 0.07, zm);           // techo
+  // listones verticales en el fondo (como el revestimiento de la foto)
+  for (let x = nx1 + 0.25; x < nx2 - 0.1; x += 0.3) box(root, 0.03, ah, 0.02, woodD, x, ah / 2, zb + 0.005);
+  // tabique bajo entre recepción y seguridad (deja pasar detrás de la barra)
+  box(root, 0.1, ah, NICHE.depth - 1.15, wood, nsp, ah / 2, zb + (NICHE.depth - 1.15) / 2);
+  // tabique del pasillo del personal (separa la barra del pasillo hacia la puerta)
+  box(root, 0.1, ah, NICHE.depth - 1.15, wood, nce + 0.05, ah / 2, zf - (NICHE.depth - 1.15) / 2);
+  // tira de LED en el techo y en las esquinas del fondo
+  box(root, nce - nx1 - 0.3, 0.04, 0.08, glow('#ffd79a'), (nx1 + nce) / 2, ah - 0.02, zf - 0.3).castShadow = false;
+  for (const x of [nx1 + 0.05, nsp - 0.08, nsp + 0.08, nce - 0.05]) box(root, 0.04, ah - 0.1, 0.04, glow('#ffd79a'), x, ah / 2, zb + 0.05).castShadow = false;
+  for (const [x, i] of [[recC, 7], [secC, 6]]) {
+    const l = new THREE.PointLight('#ffd9a8', i, 6, 1.6);
+    l.position.set(x, ah - 0.45, zf - 0.9);
+    root.add(l);
+  }
+  // marco de madera clara alrededor de la abertura
+  const fz = zf + 0.15 + 0.06;
+  for (const x of [nx1 - 0.09, nce + 0.09]) rbox(root, 0.18, ah + 0.18, 0.12, 0.03, woodL, x, (ah + 0.18) / 2, fz);
+  rbox(root, nce - nx1 + 0.36, 0.18, 0.12, 0.03, woodL, (nx1 + nce) / 2, ah + 0.09, fz);
+
+  // carteles sobre la abertura (mismo estilo para recepción y seguridad)
+  const plate = (title, sub) => canvasTex(640, 200, (ctx, w, h) => {
+    ctx.fillStyle = '#1b1f3b'; rr(ctx, 0, 0, w, h, 24); ctx.fill();
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 8; rr(ctx, 8, 8, w - 16, h - 16, 18); ctx.stroke();
+    txt(ctx, title, w / 2, 74, { size: 76, fill: C.yellow, lw: 0 });
+    txt(ctx, sub, w / 2, 148, { font: 'Fredoka', weight: '600', size: 33, fill: '#ffffff', lw: 0 });
+  });
+  const signTex = plate('RECEPCIÓN', 'Dejá tu mochila · Mostrá tu DNI');
+  const secTex = plate('SEGURIDAD', 'Cámaras · Control de acceso');
+  for (const [x, tex] of [[recC, signTex], [secC, secTex]]) {
+    rbox(root, 2.75, 0.95, 0.06, 0.04, toon(C.gold), x, ah + 0.85, zf + 0.18);
+    plane(root, 2.6, 0.81, glow('#e8e0d0', { map: tex }), x, ah + 0.85, zf + 0.215).castShadow = false;
+  }
+
+  // ---------- barra cerrada de punta a punta ----------
+  const bl = nce - nx1, bc = (nx1 + nce) / 2, bz = zf - 0.05;
+  rbox(root, bl, 1.0, 0.6, 0.06, toon('#4a2c20'), bc, 0.5, bz);
+  rbox(root, bl + 0.1, 0.07, 0.72, 0.03, toon('#efe3c8'), bc, 1.04, bz);
+  rbox(root, bl, 0.06, 0.62, 0.02, toon(C.gold), bc, 0.06, bz);
+  box(root, bl - 0.1, 0.03, 0.03, glow('#ffd79a'), bc, 0.13, bz + 0.31).castShadow = false; // LED al pie
+
+  // ---------- guardarropa con mochilas (detrás de la recepcionista) ----------
+  const gw = nsp - nx1 - 0.7, gh = 2.2, cols = 5, rows = 3, cw = (gw - 0.2) / cols, ch = (gh - 0.2) / rows;
+  const sz = zb + 0.21, gx = recC - 0.05;
+  // casilleros abiertos: fondo, marco exterior, estantes y divisiones
+  const lockerD = toon('#6a4630');
+  box(root, gw, gh, 0.04, toon('#4a2e1e'), gx, gh / 2, zb + 0.02);
+  for (const x of [gx - gw / 2 + 0.05, gx + gw / 2 - 0.05]) box(root, 0.1, gh, 0.42, lockerD, x, gh / 2, sz);
+  box(root, gw, 0.1, 0.42, lockerD, gx, 0.05, sz);
+  box(root, gw, 0.1, 0.42, lockerD, gx, gh - 0.05, sz);
+  for (let i = 1; i < cols; i++) box(root, 0.05, gh - 0.2, 0.44, toon('#8a5e3c'), gx - (gw - 0.2) / 2 + i * cw, gh / 2, sz + 0.01);
+  for (let j = 1; j < rows; j++) box(root, gw - 0.2, 0.05, 0.44, toon('#8a5e3c'), gx, 0.1 + j * ch, sz + 0.01);
+  const bagCols = ['#e8342f', '#3b7be8', '#3fae49', '#ff8a1f', '#7b3fc4', '#2fb8c4', '#ff5fa2', '#f2c46d'];
+  let k = 0;
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    if ((i + j * 3) % 4 === 3) continue; // algunos casilleros vacíos
+    const b = makeBackpack(bagCols[k++ % bagCols.length]);
+    b.scale.setScalar(0.85);
+    b.position.set(gx - (gw - 0.2) / 2 + cw * (i + 0.5), 0.1 + ch * j + 0.24, sz + 0.12);
+    root.add(b);
+  }
+  const lbl = canvasTex(400, 90, (ctx, w, h) => {
+    ctx.fillStyle = C.yellow; rr(ctx, 0, 0, w, h, 16); ctx.fill();
+    txt(ctx, 'GUARDARROPA', w / 2, h / 2 + 3, { size: 50, fill: C.ink, lw: 0 });
+  });
+  plane(root, 1.3, 0.3, glow('#e8e0d0', { map: lbl }), gx, gh + 0.4, zb + 0.02).castShadow = false;
+
+  // ---------- seguridad: muro de monitores y escritorio ----------
+  const feeds = ['#5fe8a0', '#6fd0ff', '#5fe8a0', '#9fe0ff', '#5fe8a0', '#6fd0ff'];
+  rbox(root, 2.3, 1.05, 0.08, 0.03, toon(C.ink), secC - 0.35, 1.85, zb + 0.05);
+  feeds.forEach((c, i) => {
+    const sx = secC - 0.35 + ((i % 3) - 1) * 0.74, sy = 1.6 + Math.floor(i / 3) * 0.48;
+    plane(root, 0.68, 0.42, glow(c), sx, sy, zb + 0.1).castShadow = false;
+  });
+  rbox(root, 2.2, 0.78, 0.55, 0.04, wood, secC - 0.35, 0.39, zb + 0.3);
+  rbox(root, 2.3, 0.05, 0.62, 0.02, toon('#efe3c8'), secC - 0.35, 0.8, zb + 0.32);
+  // silla vacía frente a los monitores
+  cyl(root, 0.2, 0.22, 0.06, toon(C.ink), secC - 0.5, 0.52, zb + 0.95, 14);
+  cyl(root, 0.03, 0.03, 0.5, toon('#c9cfd8'), secC - 0.5, 0.25, zb + 0.95, 8);
+  // detector de metales de mano sobre la barra
+  const wand = rbox(root, 0.07, 0.04, 0.32, 0.02, toon(C.ink), secC + 0.3, 1.1, bz + 0.05);
+  wand.rotation.y = 0.5;
+
+  // ---------- puerta del personal (cara este, del lado del casino) ----------
+  const ex = X(NICHE.x2), dzc = zf - NICHE.depth / 2;
+  for (const s of [-1, 1]) rbox(root, 0.36, 2.4, 0.12, 0.03, woodL, ex, 1.2, dzc + s * 0.6);
+  rbox(root, 0.36, 0.14, 1.32, 0.03, woodL, ex, 2.37, dzc);
+  rbox(root, 0.06, 2.25, 1.06, 0.02, toon('#9a6338'), ex + 0.08, 1.125, dzc);
+  sph(root, 0.045, toon(C.gold), ex + 0.13, 1.05, dzc + 0.38, 10, 8);
+  const staffTex = canvasTex(512, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#1b1f3b'; rr(ctx, 0, 0, w, h, 18); ctx.fill();
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 6; rr(ctx, 6, 6, w - 12, h - 12, 14); ctx.stroke();
+    txt(ctx, 'SOLO PERSONAL', w / 2, h / 2 + 4, { size: 60, fill: C.yellow, lw: 0 });
+  });
+  const st = plane(root, 1.3, 0.33, glow('#e8e0d0', { map: staffTex }), ex + 0.19, 2.7, dzc);
+  st.rotation.y = Math.PI / 2;
+  st.castShadow = false;
+
+  // Lo de la recepción va en un grupo: +z local es hacia el centro del hall.
   const rc = new THREE.Group();
-  rc.position.set((X(HALL.x1) + X(45)) / 2 - 0.2, 0, Z(HALL.y1) + 1.25);
+  rc.position.set(recC, 0, bz);
   root.add(rc);
   const desk = new THREE.Group();
   rc.add(desk);
-  rbox(desk, 2.2, 1.0, 0.6, 0.06, toon('#4a2c20'), 0, 0.5, 0);
-  rbox(desk, 2.35, 0.07, 0.72, 0.03, toon('#efe3c8'), 0, 1.04, 0);
-  rbox(desk, 2.25, 0.06, 0.62, 0.02, toon(C.gold), 0, 0.06, 0);
-  const signTex = canvasTex(640, 200, (ctx, w, h) => {
-    ctx.fillStyle = '#1b1f3b'; rr(ctx, 0, 0, w, h, 24); ctx.fill();
-    ctx.strokeStyle = C.gold; ctx.lineWidth = 8; rr(ctx, 8, 8, w - 16, h - 16, 18); ctx.stroke();
-    txt(ctx, 'RECEPCIÓN', w / 2, 74, { size: 76, fill: C.yellow, lw: 0 });
-    txt(ctx, 'Dejá tu mochila · Mostrá tu DNI', w / 2, 148, { font: 'Fredoka', weight: '600', size: 33, fill: '#ffffff', lw: 0 });
-  });
-  plane(desk, 1.8, 0.56, glow('#e8e0d0', { map: signTex }), 0, 0.58, 0.305).castShadow = false;
-  // el mismo cartel, grande, en la pared de atrás de la recepcionista
-  const wz = -1.25 + 0.15; // cara interna de la pared norte (en coords del grupo)
-  rbox(rc, 2.75, 0.95, 0.06, 0.04, toon(C.gold), 0, 2.75, wz + 0.03);
-  plane(rc, 2.6, 0.81, glow('#e8e0d0', { map: signTex }), 0, 2.75, wz + 0.065).castShadow = false;
   rbox(desk, 0.34, 0.04, 0.24, 0.01, toon('#2a2c38'), 0.65, 1.1, 0.12);
   for (let i = 0; i < 3; i++) {
     const card = makeIdCard();
@@ -49,27 +147,6 @@ export function buildReception(root, R) {
   const scr = plane(desk, 0.44, 0.28, glow('#6fb8ff'), -0.3, 1.33, -0.172);
   scr.rotation.y = Math.PI;
   cyl(desk, 0.03, 0.03, 0.14, toon(C.ink), -0.3, 1.13, -0.15, 8);
-
-  // guardarropa con mochilas (contra la cabina de seguridad)
-  const sx = -25.7, sz = Z(209) + 0.25;
-  rbox(root, 2.7, 2.1, 0.42, 0.04, toon('#3a2218'), sx, 1.05, sz);
-  const cols = 4, rows = 3, cw = 2.5 / cols, ch = 1.9 / rows;
-  for (let i = 1; i < cols; i++) box(root, 0.05, 1.9, 0.44, toon('#5b3b2c'), sx - 1.25 + i * cw, 1.05, sz + 0.01);
-  for (let j = 1; j < rows; j++) box(root, 2.5, 0.05, 0.44, toon('#5b3b2c'), sx, 0.1 + j * ch, sz + 0.01);
-  const bagCols = ['#e8342f', '#3b7be8', '#3fae49', '#ff8a1f', '#7b3fc4', '#2fb8c4', '#ff5fa2', '#f2c46d'];
-  let k = 0;
-  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-    if ((i + j * 3) % 4 === 3) continue; // algunos casilleros vacíos
-    const b = makeBackpack(bagCols[k++ % bagCols.length]);
-    b.scale.setScalar(0.85);
-    b.position.set(sx - 1.25 + cw * (i + 0.5), 0.1 + ch * j + 0.24, sz + 0.12);
-    root.add(b);
-  }
-  const lbl = canvasTex(400, 90, (ctx, w, h) => {
-    ctx.fillStyle = C.yellow; rr(ctx, 0, 0, w, h, 16); ctx.fill();
-    txt(ctx, 'GUARDARROPA', w / 2, h / 2 + 3, { size: 50, fill: C.ink, lw: 0 });
-  });
-  plane(root, 1.3, 0.3, glow('#e8e0d0', { map: lbl }), sx, 2.35, sz + 0.22).castShadow = false;
 
   const add2 = (o) => { rc.add(o); R.updaters.push(o.userData.update); return o; };
 
