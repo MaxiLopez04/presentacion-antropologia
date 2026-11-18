@@ -16,6 +16,9 @@ const GRANDPA_TOPS = ['#6b4f3a', '#2f4f7a', '#4f6b3a', '#7a2f3a', '#5a5a6a'];
 const YOUNG_TOPS = ['#e8342f', '#3b7be8', '#ff8a1f', '#7b3fc4', '#2fb8c4', '#ff5fa2'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+// pantalla de la tragamonedas vista desde el asiento (coords del jugador sentado)
+const ARM_GEO = new THREE.CapsuleGeometry(0.06, 1, 4, 10), ARM_UP = V3(0, 1, 0), armDir = V3(0, 0, 0);
+const SCREEN = V3(-0.14, 0.78, 0.66), TAP_FROM = V3(-0.2, 0.7, 0.42), SCRATCH = V3(0.0, 1.0, 0.67);
 
 // Lata de cerveza (blanca y celeste, como la de la foto)
 let canTex = null;
@@ -155,6 +158,24 @@ export function makePatron(o = {}) {
     hands.forEach((h, i) => { h.position.set((i ? 1 : -1) * 0.31, 0.32, 0.04); rest[i].copy(h.position); });
   }
   if (o.handPos) o.handPos.forEach((p, i) => { if (p) { hands[i].position.copy(p); rest[i].copy(p); } });
+  // brazos con manga del color de la ropa, del hombro a cada mano. Se
+  // reacomodan en cada cuadro, así siguen a la mano en cualquier gesto.
+  const arms = hands.map((h, i) => {
+    const m = new THREE.Mesh(ARM_GEO, body);
+    m.castShadow = true;
+    m.userData.shoulder = V3((i ? 1 : -1) * 0.2, 0.6, 0.04);
+    g.add(m);
+    return m;
+  });
+  const placeArms = () => arms.forEach((m, i) => {
+    const sh = m.userData.shoulder;
+    armDir.subVectors(hands[i].position, sh);
+    const d = armDir.length();
+    const len = Math.max(0.04, d - 0.06); // termina justo dentro del guante
+    m.position.copy(sh).addScaledVector(armDir, (0.5 * len) / d);
+    m.quaternion.setFromUnitVectors(ARM_UP, armDir.normalize());
+    m.scale.set(1, len / 1.12, 1);
+  });
   let can = null;
   if (o.beer) { can = makeCan(); can.scale.setScalar(1.3); g.add(can); }
   dynamic(g);
@@ -163,10 +184,29 @@ export function makePatron(o = {}) {
   const canBase = o.standing ? V3(0.27, 0.42, 0.16) : V3(0.24, 0.62, 0.3);
   g.userData.hands = hands;
   g.userData.head = head;
-  g.userData.update = (t) => {
+  placeArms();
+  g.userData.update = (t) => { animate(t); placeArms(); };
+  const animate = (t) => {
     head.rotation.z = Math.sin(t * 1.3 + phase) * 0.06;
     head.position.y = 0.92 + Math.abs(Math.sin(t * 2 + phase)) * 0.015;
     torso.scale.y = 1 + Math.sin(t * 2 + phase) * 0.02;
+    // gestos sobre la pantalla de la tragamonedas (jugadores sentados):
+    //  'scratch' rasca la pantalla rápido; 'tap' le da golpecitos de a ratos
+    //  (con la mano derecha, hands[0]: es la que se ve desde la cámara de la parada 4)
+    if (o.act) {
+      if (o.act === 'scratch') {
+        // arriba de la pantalla (si no, la tapa el jugador de al lado desde la cámara)
+        hands[0].position.set(SCRATCH.x + Math.sin(t * 17 + phase) * 0.07, SCRATCH.y + Math.sin(t * 8.5) * 0.03, SCRATCH.z);
+        head.rotation.x = 0.12; // inclinada hacia la pantalla
+      } else if (o.act === 'tap') {
+        const c = (t * 0.55 + phase) % 1;
+        const k = c < 0.45 ? Math.max(0, Math.sin((c / 0.45) * Math.PI * 4)) : 0; // tanda de 4 golpecitos
+        hands[0].position.lerpVectors(TAP_FROM, SCREEN, Math.pow(k, 0.6));
+        head.rotation.z += k * 0.04;
+      }
+      hands[1].position.y = rest[1].y + Math.max(0, Math.sin(t * 5 + phase)) * 0.04;
+      return;
+    }
     if (o.still) return;
     if (o.standing) {
       hands.forEach((h, i) => { h.position.y = rest[i].y + Math.sin(t * 1.5 + phase + i) * 0.015; });

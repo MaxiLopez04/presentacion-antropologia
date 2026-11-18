@@ -316,7 +316,7 @@ export function buildNotebookReader(root, R, rouletteCenter, content = {}) {
   // hacia el Pozo MEGA (el mismo sentido que la cámara de la parada 2)
   const kid = makePatron({
     type: 'youngM', body: '#2fb8c4', hair: '#3b2314', still: true,
-    handPos: [V(-0.17, 0.33, 0.42), V(0.17, 0.33, 0.42)], // sosteniéndolo desde abajo
+    handPos: [V(-0.33, 0.42, 0.42), V(0.33, 0.42, 0.42)], // sosteniéndolo de los costados (los brazos no tapan las hojas)
   });
   kid.position.set(rouletteCenter.x + 4.45, 0.75, rouletteCenter.z);
   kid.rotation.y = -Math.PI / 2; // mira al oeste

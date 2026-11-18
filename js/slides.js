@@ -48,6 +48,7 @@ export const SLIDES = [
   },
   {
     id: 'mapa',
+    panel: false, // sin cartel: la diapositiva es el plano en sí
     kicker: 'PARADA 03',
     title: 'Mapa de seguridad',
     accent: '#e8342f',

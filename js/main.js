@@ -25,7 +25,7 @@ const VIEWS = {
   portada: { pos: V(FX - 19, 1.9, DOOR_MID), target: V(FX, 7.6, DOOR_MID), fov: 55 },
   hall: { pos: V(-24.6, 2.4, 3.9), target: V(-27.6, 1.5, -5.6), fov: 64 },
   ruleta: { pos: V(18.6, 3.9, -5.2), target: V(6.5, 0.6, -0.6), fov: 55 },
-  mapa: { pos: V(18.3, 1.8, 6.1), target: V(18.55, 2.15, 10.0), fov: 50 },
+  mapa: { pos: V(17.9, 2.25, 7.95), target: V(17.9, 2.25, 9.96), fov: 50 }, // de frente y cerca del plano
   pozo: { pos: V(4.6, 2.6, 3.7), target: V(-2.6, 1.6, -1.4), fov: 55 },
   expendedora: { pos: V(-14.3, 1.7, -3.1), target: V(-11.2, 1.2, -4.6), fov: 52 },
   moza: null, // se calcula a partir de la posición final de la moza
@@ -370,6 +370,7 @@ document.getElementById('brand').textContent = META.brand;
 function showPanel(i) {
   const s = SLIDES[i];
   if (s.type === 'notebook') return; // el texto está en las hojas del cuaderno
+  if (s.panel === false) return;     // parada sin cartel (ej. el plano de seguridad)
   if (s.type === 'cover') {
     $('cover-kicker').textContent = s.kicker || '';
     $('cover-title').textContent = s.title || '';
