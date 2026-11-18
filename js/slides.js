@@ -16,9 +16,9 @@ export const SLIDES = [
   {
     id: 'portada',
     type: 'cover',
-    kicker: 'Presentación',
-    title: 'Un paseo por el casino',
-    subtitle: 'Presioná → o la flecha roja para entrar',
+    kicker: 'Antropología Económica · 2026',
+    title: 'Casino MAC Group',
+    subtitle: 'Consumo, reciprocidad y uso del tiempo entre apostadores y personal · Presioná → para entrar',
   },
   {
     id: 'hall',
@@ -29,7 +29,8 @@ export const SLIDES = [
     bullets: [
       'A la izquierda, la recepcionista.',
       'Hay que dejar la mochila y mostrar el DNI.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Calle Gral. Alvear, en el centro de San Salvador de Jujuy.',
+      'La recepcionista guía con calidez a quien entra por primera vez y le explica los montos mínimos.',
     ],
     tip: '',
   },
@@ -40,11 +41,11 @@ export const SLIDES = [
     accent: '#e8342f',
     side: 'right',
     bullets: [
-      'Desde acá se ve toda la sala.',
-      'Desde la ruleta se ve el Pozo MEGA.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Nuestro punto fijo de observación los viernes 06/11 (18–20 h) y 13/11 (20–21:30 h).',
+      'En dos de las observaciones que realizamos, otros jugadores nos pedían el lugar.',
+      'Como situación fuera de lo común, nos encontramos con un hombre que perdió todo en una jugada, golpeó la pantalla y se fue a otro sector.',
     ],
-    tip: 'Tip: hacé click en la ruleta para girarla.',
+    tip: '',
   },
   {
     id: 'mapa',
@@ -67,11 +68,12 @@ export const SLIDES = [
     accent: '#7b3fc4',
     side: 'left',
     bullets: [
-      'Máquinas conectadas a un pozo acumulado.',
-      'El cartel muestra el pozo en vivo.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Las máquinas centrales del Pozo MEGA y las de alrededor estaban siempre ocupadas.',
+      'La mayoría apuesta entre $1.000 y $20.000 (alrededor de $10.000 en promedio). Algunos adultos mayores llegan a $90.000–$100.000.',
+      'Gestos que vimos: varios adultos mayores frotan o «rascan» el vidrio, y algunos golpean los botones. Nada de eso cambia el resultado.',
+      'En la primera observación vimos a una persona con movilidad reducida que se quedó jugando durante toda la jornada.',
     ],
-    tip: 'Tip: hacé click en una tragamonedas para tirar.',
+    tip: '',
   },
   {
     id: 'expendedora',
@@ -80,11 +82,12 @@ export const SLIDES = [
     accent: '#18a7b5',
     side: 'right',
     bullets: [
-      'Ubicada al lado de la escalera mecánica.',
-      'Bebidas y snacks para los jugadores.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Al lado de la escalera mecánica hay una expendedora de bebidas y snacks.',
+      'El bar del fondo casi no tiene gente.',
+      'Los jugadores comen y toman sin levantarse de la máquina.',
+      'La comida va hasta el asiento para que nadie deje de jugar.',
     ],
-    tip: 'Tip: hacé click en la máquina para comprar algo.',
+    tip: '',
   },
   {
     id: 'moza',
@@ -95,9 +98,10 @@ export const SLIDES = [
     bullets: [
       'El personal recorre la sala con café.',
       'Uniforme: traje negro.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'El café no tiene costo, pero se suele dejar propina.',
+      'También llevan sándwiches y bebidas sin cargo hasta el asiento.',
     ],
-    tip: 'Tip: hacé click en la moza.',
+    tip: '',
   },
   {
     id: 'tecnico',
@@ -106,9 +110,9 @@ export const SLIDES = [
     accent: '#2f6a3a',
     side: 'left',
     bullets: [
-      'Una tragamonedas fuera de servicio.',
-      'El técnico la está reparando.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Los técnicos usan mameluco verde oscuro. Abren y arreglan las máquinas que fallan.',
+      'En una de las observaciones se nos trabó una máquina: el técnico lo solucionó y la encargada nos deseó suerte.',
+      'La encargada nos contó que el casino se llena a la mañana y a la noche.',
     ],
     tip: '',
   },
@@ -119,11 +123,11 @@ export const SLIDES = [
     accent: '#3fae49',
     side: 'left',
     bullets: [
-      'Máquina para cobrar los tickets.',
-      'Junto al ascensor, al fondo de la sala.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'No es un cajero de banco: es una terminal del propio casino para cobrar los tickets.',
+      'Paga de a $1.000 y el resto ($1–$999) lo devuelve en ticket, así la plata se queda adentro.',
+      'Acepta tarjetas de membresía. Aun así, muchos traen efectivo en riñonera.',
     ],
-    tip: 'Tip: hacé click en el cajero para cobrar.',
+    tip: '',
   },
   {
     id: 'camaras',
@@ -132,11 +136,11 @@ export const SLIDES = [
     accent: '#2a2f45',
     side: 'left',
     bullets: [
-      'Hay cámaras en todo el casino.',
-      'Tres vigilan el cajero desde arriba.',
-      'Texto de ejemplo: reemplazalo en js/slides.js.',
+      'Hay cámaras en todo el casino y el personal recorre la sala vigilando.',
+      'No hay ventanas, luz natural ni relojes a la vista: siempre parece de noche.',
+      'Una señora nos preguntó la hora: la gente pierde la noción del tiempo.',
     ],
-    tip: 'Tip: fijate cómo las cámaras te siguen.',
+    tip: '',
   },
   {
     // Última parada: la cámara vuelve a la ruleta y hace zoom al cuaderno de
@@ -152,22 +156,23 @@ export const SLIDES = [
     title: 'Mis teorías',
     notebook: {
       left: {
-        title: 'Teorías',
+        title: 'Observación → Teoría',
         lines: [
-          '- Teoría 1: escribí acá tu primera teoría.',
-          '- Teoría 2: otra idea para la exposición.',
-          '- Teoría 3: ...',
+          '1. Café y comida en el asiento, trato amable, sin relojes ni ventanas → Polanyi: la economía está incrustada en relaciones sociales.',
           '',
-          'Texto de ejemplo: reemplazalo en js/slides.js',
+          '2. Adultos mayores que apuestan entre $40.000 y $100.000 → Robbins lo vería como irracional; para Herskovits es racional dentro de su matriz cultural.',
+          '',
+          '3. Rascar el vidrio, golpear los botones y mostrar los billetes → Mauss: la ofrenda y el potlatch.',
         ],
       },
       right: {
-        title: 'Conclusiones',
+        title: 'Preguntas',
         lines: [
-          '- Lo que vimos en el recorrido...',
-          '- Relación con las teorías...',
+          '1. ¿El casino arma hospitalidad y un tiempo propio para que la plata siga circulando?',
           '',
-          '¿Preguntas?',
+          '2. ¿Qué buscan los adultos mayores además de ganar: compañía, buen trato, un lugar fresco y seguro?',
+          '',
+          '3. ¿Son microrrituales para atraer la suerte o una forma de buscar prestigio frente a los demás?',
         ],
       },
     },

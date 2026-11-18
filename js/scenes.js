@@ -388,21 +388,24 @@ function drawNotebook(ctx, w, h, content) {
     if (top + Math.max(L.length, Rr.length) * lh <= bottom) break;
   }
 
-  ctx.fillStyle = '#fbf7ea'; ctx.fillRect(0, 0, w, h);
+  // dos hojas separadas: en el medio queda el hueco del espiral, donde se ve la tapa
+  const gap = 70, g0 = half - gap / 2, g1 = half + gap / 2;
+  ctx.fillStyle = '#1f3a8a'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#fbf7ea'; ctx.fillRect(0, 0, g0, h); ctx.fillRect(g1, 0, w - g1, h);
   // sombra suave hacia el lomo
-  for (const [x0, dir] of [[half, -1], [half, 1]]) {
+  for (const [x0, dir] of [[g0, -1], [g1, 1]]) {
     const g = ctx.createLinearGradient(x0, 0, x0 + dir * 90, 0);
     g.addColorStop(0, 'rgba(120,100,60,.28)'); g.addColorStop(1, 'rgba(120,100,60,0)');
     ctx.fillStyle = g; ctx.fillRect(Math.min(x0, x0 + dir * 90), 0, 90, h);
   }
-  // renglones (el primero, en "top", es el del título)
+  // renglones (el primero, en "top", es el del título), cortados en el hueco
   ctx.strokeStyle = 'rgba(80,130,200,.35)'; ctx.lineWidth = 3;
-  for (let y = top; y < h - 20; y += lh) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  for (let y = top; y < h - 20; y += lh) for (const [a, b] of [[0, g0], [g1, w]]) { ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
   ctx.strokeStyle = 'rgba(220,70,70,.45)'; ctx.lineWidth = 3;
   for (const x of [120, half + 120]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-  // agujeros del espiral
+  // agujeros del espiral, cerca del borde de cada hoja
   ctx.fillStyle = '#d9d2bd';
-  for (let y = 40; y < h; y += 72) for (const x of [half - 26, half + 26]) { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); }
+  for (let y = 40; y < h; y += 72) for (const x of [g0 - 20, g1 + 20]) { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); }
 
   const ink = '#1d2f7a';
   const page = (p, rows, x0) => {
