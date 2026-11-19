@@ -73,7 +73,7 @@ try {
 } catch (e) { /* si falla, se usan fuentes del sistema */ }
 
 const world = buildWorld(scene);
-window.casino = { renderer, scene, camera, world }; // útil para depurar desde la consola
+window.casino = { renderer, composer, scene, camera, world }; // útil para depurar desde la consola
 // las cámaras de seguridad del cajero siguen al espectador en su diapositiva
 const CAMS_SLIDE = SLIDES.findIndex((s) => s.id === 'camaras');
 world.watch = () => (current === CAMS_SLIDE ? camera.position : null);
@@ -451,6 +451,7 @@ window.addEventListener('keydown', (e) => {
     case 'm': case 'M': toggleMap(); break;
     case 'h': case 'H': document.body.classList.toggle('ui-hidden'); break;
     case 'r': case 'R': remote?.toggle(); break;
+    case 'l': case 'L': setLite(!lite); break;
     default:
       if (/^[0-9]$/.test(e.key) && +e.key < SLIDES.length) go(+e.key);
   }
@@ -571,20 +572,58 @@ window.addEventListener('resize', () => {
 // Calidad adaptativa: si la PC va lenta, baja la resolución interna, pero
 // nunca por debajo de 1 píxel por píxel de pantalla (si no, se ve borroso).
 // En pantallas comunes (devicePixelRatio 1) no cambia nada.
-const maxPR = Math.min(window.devicePixelRatio, 2);
+// En modo liviano el máximo es 1 (en pantallas de alta densidad dibuja menos píxeles).
+const DPR = window.devicePixelRatio || 1;
+let maxPR = Math.min(DPR, 2);
 const minPR = Math.min(1, maxPR);
-let pr = maxPR, qAcc = 0, qFrames = 0;
+let pr = maxPR, qAcc = 0, qFrames = 0, slowCount = 0;
+const startedAt = performance.now();
+function applyPR(np) { pr = np; renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight); resizeComposer(); }
 function adaptQuality(dt) {
   if (document.hidden) return;
   qAcc += dt; qFrames++;
   if (qAcc < 2) return;
   const fps = qFrames / qAcc;
   qAcc = 0; qFrames = 0;
+  // si va lento durante unos segundos, sugiere el modo liviano (una sola vez)
+  if (!lite && fps < 30 && performance.now() - startedAt > 6000) slowCount++; else slowCount = 0;
+  if (slowCount >= 3) { slowCount = 0; suggestLite(); }
   let np = pr;
   if (fps < 40) np = Math.max(minPR, pr - 0.2);
   else if (fps > 50) np = Math.min(maxPR, pr + 0.1);
-  if (Math.abs(np - pr) > 0.01) { pr = np; renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight); resizeComposer(); }
+  if (Math.abs(np - pr) > 0.01) applyPR(np);
 }
+
+// ---------- Modo liviano ----------
+// Para PCs lentas: apaga las sombras (y su actualización cada dos cuadros), el
+// brillo de postproceso ("bloom") y limita la resolución a 1. Se recuerda
+// en este navegador. Botón del rayo o tecla L.
+const shadowLights = [];
+scene.traverse((o) => { if (o.isLight && o.castShadow) shadowLights.push(o); });
+let lite = false;
+const liteToast = $('lite-toast');
+let toastShown = false, toastTimer = 0;
+function setLite(on) {
+  lite = on;
+  for (const l of shadowLights) l.castShadow = !on;
+  renderer.shadowMap.needsUpdate = true;
+  $('btn-lite').classList.toggle('active', on);
+  $('btn-lite').setAttribute('aria-pressed', String(on));
+  maxPR = on ? Math.min(DPR, 1) : Math.min(DPR, 2);
+  applyPR(on ? Math.min(pr, maxPR) : maxPR);
+  liteToast.classList.add('hidden');
+  try { localStorage.setItem('casino-lite', on ? '1' : '0'); } catch (e) { /* sin almacenamiento */ }
+}
+function suggestLite() {
+  if (toastShown || lite) return;
+  toastShown = true;
+  liteToast.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => liteToast.classList.add('hidden'), 10000);
+}
+liteToast.addEventListener('click', () => setLite(true));
+$('btn-lite').addEventListener('click', () => setLite(!lite));
+try { if (localStorage.getItem('casino-lite') === '1') setLite(true); } catch (e) { /* sin almacenamiento */ }
 
 const clock = new THREE.Clock();
 const lookDir = new THREE.Vector3();
@@ -640,9 +679,9 @@ function tick() {
   if (frame % 2 === 0) minimap.draw(cam.pos, lookDir);
   frame++;
 
-  if (frame % 2 === 0) renderer.shadowMap.needsUpdate = true;
+  if (!lite && frame % 2 === 0) renderer.shadowMap.needsUpdate = true;
   adaptQuality(dt);
-  composer.render();
+  if (lite) renderer.render(scene, camera); else composer.render();
   requestAnimationFrame(tick);
 }
 
